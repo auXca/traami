@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traami – Find Rides</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{--brand:#4f46e5;--brand2:#7c3aed;--dark:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8}
+*{box-sizing:border-box}
+body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;margin:0}
+.topbar{background:linear-gradient(135deg,var(--brand),var(--brand2));padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar .logo{font-size:22px;font-weight:800;color:#fff;text-decoration:none}
+.topbar .nav-links a{color:rgba(255,255,255,.85);text-decoration:none;margin-left:16px;font-size:14px}
+.topbar .nav-links a:hover{color:#fff}
+.search-panel{background:var(--card);border-bottom:1px solid var(--border);padding:20px 24px}
+.search-panel h5{margin:0 0 14px;font-size:15px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.search-row{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.form-control{background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:8px;padding:10px 14px}
+.form-control:focus{background:#0f172a;border-color:var(--brand);color:var(--text);box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.btn-search{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:10px 24px;font-weight:600}
+.btn-search:hover{background:#4338ca}
+.map-container{height:320px;width:100%}
+.main-content{display:grid;grid-template-columns:1fr 340px;gap:0;height:calc(100vh - 200px)}
+.rides-panel{padding:20px 24px;overflow-y:auto;border-right:1px solid var(--border)}
+.rides-panel h5{margin:0 0 16px;font-size:14px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.ride-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:14px;transition:border-color .2s}
+.ride-card:hover{border-color:var(--brand)}
+.ride-route{font-size:16px;font-weight:700;margin-bottom:8px}
+.ride-route span{color:var(--brand)}
+.ride-meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.badge-meta{background:#1e3a5f;color:#60a5fa;border-radius:20px;padding:3px 10px;font-size:12px}
+.badge-price{background:#1a3a2f;color:#34d399;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:700}
+.badge-seats{background:#2d1b4e;color:#a78bfa;border-radius:20px;padding:3px 10px;font-size:12px}
+.ride-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.btn-route{background:#1e3a5f;color:#60a5fa;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+.btn-request{background:var(--brand);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer;font-weight:600}
+.btn-chat{background:#1e293b;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+.btn-rate{background:#2d1b4e;color:#a78bfa;border:none;border-radius:8px;padding:7px 14px;font-size:13px;cursor:pointer}
+.stars{color:#fbbf24;font-size:14px}
+.chat-panel{padding:0;display:flex;flex-direction:column;background:#0f172a}
+.chat-header{padding:16px 20px;background:var(--card);border-bottom:1px solid var(--border);font-weight:600;font-size:14px}
+.chat-messages{flex:1;padding:16px 20px;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.chat-bubble{background:var(--card);border-radius:10px;padding:8px 12px;font-size:13px;max-width:90%;align-self:flex-start}
+.chat-bubble.mine{background:var(--brand);align-self:flex-end}
+.chat-input-row{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input{flex:1;background:#1e293b;border:1px solid var(--border);color:var(--text);border-radius:20px;padding:8px 16px;font-size:13px}
+.btn-send{background:var(--brand);border:none;border-radius:20px;color:#fff;padding:8px 16px;font-size:13px}
+.notification-toast{position:fixed;top:20px;right:20px;background:#1e3a5f;color:#60a5fa;border:1px solid #2563eb;border-radius:10px;padding:12px 20px;font-size:14px;display:none;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted)}
+.empty-state .icon{font-size:48px;margin-bottom:12px}
+.rating-modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:9999}
+.rating-modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px;width:340px}
+.rating-modal h5{margin:0 0 16px;font-size:17px}
+.star-picker{display:flex;gap:6px;margin:12px 0;font-size:28px;cursor:pointer}
+.star-picker span{color:#334155;transition:color .1s}
+.star-picker span.active{color:#fbbf24}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="logo">⚡ Traami</a>
+  <div class="nav-links">
+    <a href="dashboard.html">Dashboard</a>
+    <a href="create-ride.html">+ Create Ride</a>
+    <a href="login.html" id="authLink">Login</a>
+  </div>
+</div>
+
+<div id="notificationToast" class="notification-toast">🔔 New passenger requested a seat!</div>
+
+<!-- Search Panel -->
+<div class="search-panel">
+  <h5>Find a Ride</h5>
+  <div class="search-row">
+    <input id="searchPickup" class="form-control" placeholder="📍 Pickup location">
+    <input id="searchDestination" class="form-control" placeholder="🏁 Destination">
+    <button class="btn-search" onclick="searchRide()">Search</button>
+  </div>
+</div>
+
+<!-- Map -->
+<div id="map" class="map-container"></div>
+
+<!-- Main grid -->
+<div class="main-content">
+
+  <!-- Rides list -->
+  <div class="rides-panel">
+    <h5>Available Rides</h5>
+    <div id="ridesList">
+      <div class="empty-state"><div class="icon">🚗</div><p>Loading rides...</p></div>
+    </div>
+  </div>
+
+  <!-- Chat panel -->
+  <div class="chat-panel">
+    <div class="chat-header">💬 Ride Chat <span id="chatRideName" style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px">— select a ride to chat</span></div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="empty-state" style="margin:auto"><div class="icon">💬</div><p style="font-size:13px">Open a ride chat to message the driver</p></div>
+    </div>
+    <div class="chat-input-row">
+      <input class="chat-input" id="chatInput" placeholder="Type a message...">
+      <button class="btn-send" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- Rating Modal -->
+<div class="rating-modal-overlay" id="ratingModal">
+  <div class="rating-modal">
+    <h5>⭐ Rate this Ride</h5>
+    <p style="color:var(--muted);font-size:13px">How was your experience?</p>
+    <div class="star-picker" id="starPicker">
+      <span onclick="setStar(1)">★</span>
+      <span onclick="setStar(2)">★</span>
+      <span onclick="setStar(3)">★</span>
+      <span onclick="setStar(4)">★</span>
+      <span onclick="setStar(5)">★</span>
+    </div>
+    <textarea id="ratingComment" class="form-control mt-2" rows="3" placeholder="Leave a comment (optional)" style="resize:none"></textarea>
+    <input type="hidden" id="ratingTargetUser">
+    <input type="hidden" id="ratingRideId">
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="submitRating()" class="btn-request" style="flex:1">Submit Rating</button>
+      <button onclick="closeRatingModal()" class="btn-chat" style="flex:1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGMNgrZc-4zw8mijC68m9oFn5BPFXEleY&libraries=places&callback=initMap" async defer></script>
+<script>
+
+const socket = io()
+const userId = localStorage.getItem("userId")
+const token = localStorage.getItem("token")
+if (userId) socket.emit("registerUser", userId)
+
+let map, directionsService, directionsRenderer
+let pickupLat = null, pickupLng = null
+let destinationLat = null, destinationLng = null
+let driverMarker, currentRideId = null, currentDriverId = null
+let selectedStar = 0
+
+// ── Map init ───────────────────────────────────────
+function initMap() {
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: 52.4862, lng: -1.8904 },
+    zoom: 10,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] }
+    ]
+  })
+  directionsService = new google.maps.DirectionsService()
+  directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false })
+  directionsRenderer.setMap(map)
+  initSearchAutocomplete()
+  loadRides()
+}
+
+function initSearchAutocomplete() {
+  const p = document.getElementById("searchPickup")
+  const d = document.getElementById("searchDestination")
+  const pa = new google.maps.places.Autocomplete(p)
+  const da = new google.maps.places.Autocomplete(d)
+  pa.addListener("place_changed", () => {
+    const pl = pa.getPlace()
+    if (!pl.geometry) return
+    pickupLat = pl.geometry.location.lat()
+    pickupLng = pl.geometry.location.lng()
+  })
+  da.addListener("place_changed", () => {
+    const pl = da.getPlace()
+    if (!pl.geometry) return
+    destinationLat = pl.geometry.location.lat()
+    destinationLng = pl.geometry.location.lng()
+  })
+}
+
+// ── Load rides ─────────────────────────────────────
+async function loadRides() {
+  const res = await fetch("/api/rides")
+  const rides = await res.json()
+  displayRides(rides)
+}
+
+async function searchRide() {
+  if (!pickupLat || !destinationLat) {
+    alert("Please select locations from the Google suggestions")
+    return
+  }
+  const res = await fetch(`/api/rides/search?pickupLat=${pickupLat}&pickupLng=${pickupLng}&destinationLat=${destinationLat}&destinationLng=${destinationLng}`)
+  const rides = await res.json()
+  displayRides(rides)
+}
+
+function displayRides(rides) {
+  const list = document.getElementById("ridesList")
+  if (!rides || rides.length === 0) {
+    list.innerHTML = `<div class="empty-state"><div class="icon">🔍</div><p>No rides found. Try a different search.</p></div>`
+    return
+  }
+  list.innerHTML = ""
+  rides.forEach(ride => {
+    if (ride.pickupLat && ride.pickupLng) {
+      new google.maps.Marker({
+        position: { lat: ride.pickupLat, lng: ride.pickupLng },
+        map,
+        title: ride.pickup + " → " + ride.destination,
+        icon: { url: "http://maps.google.com/mapfiles/ms/icons/green-dot.png" }
+      })
+    }
+    const schedBadge = ride.scheduleType ? `<span class="badge-meta">🔁 ${ride.scheduleType}</span>` : ""
+    const timeBadge = ride.time ? `<span class="badge-meta">⏰ ${ride.timeType || ""} ${ride.time}</span>` : ""
+    list.innerHTML += `
+      <div class="ride-card">
+        <div class="ride-route">${ride.pickup} <span>→</span> ${ride.destination}</div>
+        <div class="ride-meta">
+          <span class="badge-meta">📅 ${ride.date || "—"}</span>
+          ${timeBadge}
+          <span class="badge-seats">💺 ${ride.seatsAvailable} seats</span>
+          ${schedBadge}
+          ${ride.distanceMiles ? `<span class="badge-meta">📏 ${ride.distanceMiles.toFixed(1)} mi</span>` : ""}
+          ${ride.totalRidePrice ? `<span class="badge-price">💷 £${ride.totalRidePrice.toFixed(2)}</span>` : ""}
+        </div>
+        <div class="ride-actions">
+          <button class="btn-route" onclick="drawRoute(${ride.pickupLat},${ride.pickupLng},${ride.destinationLat},${ride.destinationLng})">🗺 Route</button>
+          <button class="btn-request" onclick="requestSeat('${ride._id}')">Request Seat</button>
+          <button class="btn-chat" onclick="openChat('${ride._id}','${ride.pickup} → ${ride.destination}')">💬 Chat</button>
+          <button class="btn-rate" onclick="openRatingModal('${ride.driver}','${ride._id}')">⭐ Rate</button>
+        </div>
+      </div>`
+  })
+}
+
+function drawRoute(oLat, oLng, dLat, dLng) {
+  directionsService.route({
+    origin: { lat: oLat, lng: oLng },
+    destination: { lat: dLat, lng: dLng },
+    travelMode: "DRIVING"
+  }, (result, status) => {
+    if (status === "OK") directionsRenderer.setDirections(result)
+  })
+}
+
+async function requestSeat(rideId) {
+  if (!token) { alert("Please login first"); return }
+  const res = await fetch(`/api/bookings/request/${rideId}`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token }
+  })
+  const data = await res.json()
+  alert(data.message || data.error)
+}
+
+// ── Chat ───────────────────────────────────────────
+function openChat(rideId, name) {
+  currentRideId = rideId
+  socket.emit("joinRideRoom", rideId)
+  document.getElementById("chatRideName").textContent = name
+  document.getElementById("chatMessages").innerHTML = ""
+}
+
+function sendMessage() {
+  const text = document.getElementById("chatInput").value.trim()
+  if (!text || !currentRideId) return
+  socket.emit("sendMessage", { rideId: currentRideId, text, userId })
+  document.getElementById("chatInput").value = ""
+}
+
+socket.on("newMessage", (data) => {
+  const chat = document.getElementById("chatMessages")
+  const isMe = data.userId === userId
+  chat.innerHTML += `<div class="chat-bubble ${isMe ? "mine" : ""}">${data.text}</div>`
+  chat.scrollTop = chat.scrollHeight
+})
+
+// ── Notifications ──────────────────────────────────
+socket.on("seatRequestNotification", () => {
+  const toast = document.getElementById("notificationToast")
+  toast.style.display = "block"
+  setTimeout(() => toast.style.display = "none", 4000)
+})
+
+// ── Driver tracking ────────────────────────────────
+socket.on("driverLocationUpdate", (data) => {
+  const { lat, lng } = data
+  if (!driverMarker) {
+    driverMarker = new google.maps.Marker({
+      position: { lat, lng }, map,
+      icon: "http://maps.google.com/mapfiles/ms/icons/blue-dot.png"
+    })
+  } else {
+    driverMarker.setPosition({ lat, lng })
+  }
+})
+
+if (localStorage.getItem("role") === "driver") {
+  navigator.geolocation.watchPosition((pos) => {
+    socket.emit("driverLocation", {
+      lat: pos.coords.latitude,
+      lng: pos.coords.longitude,
+      driverId: userId
+    })
+  })
+}
+
+// ── Rating ─────────────────────────────────────────
+function openRatingModal(driverId, rideId) {
+  document.getElementById("ratingTargetUser").value = driverId
+  document.getElementById("ratingRideId").value = rideId
+  document.getElementById("ratingModal").style.display = "flex"
+  selectedStar = 0
+  updateStars()
+}
+
+function closeRatingModal() {
+  document.getElementById("ratingModal").style.display = "none"
+}
+
+function setStar(n) {
+  selectedStar = n
+  updateStars()
+}
+
+function updateStars() {
+  document.querySelectorAll("#starPicker span").forEach((s, i) => {
+    s.classList.toggle("active", i < selectedStar)
+  })
+}
+
+async function submitRating() {
+  if (!token) { alert("Login required"); return }
+  if (selectedStar === 0) { alert("Please select a star rating"); return }
+  const res = await fetch("/api/ratings/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({
+      targetUser: document.getElementById("ratingTargetUser").value,
+      rideId: document.getElementById("ratingRideId").value,
+      rating: selectedStar,
+      comment: document.getElementById("ratingComment").value
+    })
+  })
+  const data = await res.json()
+  alert(data.message || data.error)
+  closeRatingModal()
+}
+
+// Auth link
+if (token) document.getElementById("authLink").textContent = "Dashboard"
+
+</script>
+</body>
+</html>

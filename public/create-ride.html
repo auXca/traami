@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traami – Create Ride</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+:root{--brand:#4f46e5;--dark:#0f172a;--card:#1e293b;--border:#334155;--text:#e2e8f0;--muted:#94a3b8}
+body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.topbar .logo{font-size:22px;font-weight:800;color:#fff;text-decoration:none}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:16px}
+.page{max-width:680px;margin:40px auto;padding:0 20px}
+h2{font-size:24px;font-weight:800;margin-bottom:6px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:28px}
+.card-form{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:28px}
+.section-label{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin-bottom:10px;margin-top:20px}
+.section-label:first-child{margin-top:0}
+.form-control, .form-select{background:#0f172a;border:1px solid var(--border);color:var(--text);border-radius:10px;padding:11px 14px;width:100%;margin-bottom:12px}
+.form-control:focus,.form-select:focus{background:#0f172a;border-color:var(--brand);color:var(--text);box-shadow:0 0 0 3px rgba(79,70,229,.2);outline:none}
+.form-select option{background:#1e293b}
+.row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.route-map{height:220px;border-radius:10px;overflow:hidden;border:1px solid var(--border);margin-bottom:16px}
+.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:12px}
+.day-btn{background:#0f172a;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:8px 4px;font-size:12px;text-align:center;cursor:pointer;transition:all .15s}
+.day-btn.selected{background:var(--brand);border-color:var(--brand);color:#fff}
+.schedule-extra{display:none}
+.btn-submit{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:14px;width:100%;font-size:15px;font-weight:700;margin-top:8px;cursor:pointer}
+.btn-submit:hover{background:#4338ca}
+.price-preview{background:#0f172a;border:1px solid var(--border);border-radius:10px;padding:16px;margin-top:16px;display:none}
+.price-row{display:flex;justify-content:space-between;font-size:13px;padding:4px 0}
+.price-row .label{color:var(--muted)}
+.price-row .val{font-weight:600}
+.price-total{border-top:1px solid var(--border);margin-top:8px;padding-top:8px;font-size:15px;font-weight:700}
+.price-total .val{color:#34d399}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="logo">⚡ Traami</a>
+  <div><a href="rides.html">Find Rides</a><a href="dashboard.html">Dashboard</a></div>
+</div>
+
+<div class="page">
+  <h2>Create a Ride</h2>
+  <p class="sub">Share your journey and earn money for fuel</p>
+
+  <div class="card-form">
+
+    <div class="section-label">📍 Route</div>
+    <input id="pickup" class="form-control" placeholder="Pickup location">
+    <input id="destination" class="form-control" placeholder="Destination">
+    <div id="routeMap" class="route-map"></div>
+
+    <div class="section-label">📅 Date & Time</div>
+    <div class="row-2">
+      <input id="date" type="date" class="form-control">
+      <select id="timeType" class="form-select">
+        <option value="leave">Leave At</option>
+        <option value="arrive">Arrive By</option>
+      </select>
+    </div>
+    <input id="time" type="time" class="form-control">
+
+    <div class="section-label">💺 Seats</div>
+    <input id="seats" type="number" class="form-control" placeholder="Number of available seats" min="1" max="8">
+
+    <div class="section-label">🔁 Schedule Type</div>
+    <select id="scheduleType" class="form-select" onchange="handleScheduleChange()">
+      <option value="">One-time ride</option>
+      <option value="fixed">Fixed daily commute</option>
+      <option value="weekly">Recurring days (pick days below)</option>
+      <option value="rota">Rota / Flexible</option>
+    </select>
+
+    <div id="scheduleExtra" class="schedule-extra">
+      <div class="days-grid" id="daysGrid">
+        <div class="day-btn" onclick="toggleDay(this,'Mon')">Mon</div>
+        <div class="day-btn" onclick="toggleDay(this,'Tue')">Tue</div>
+        <div class="day-btn" onclick="toggleDay(this,'Wed')">Wed</div>
+        <div class="day-btn" onclick="toggleDay(this,'Thu')">Thu</div>
+        <div class="day-btn" onclick="toggleDay(this,'Fri')">Fri</div>
+        <div class="day-btn" onclick="toggleDay(this,'Sat')">Sat</div>
+        <div class="day-btn" onclick="toggleDay(this,'Sun')">Sun</div>
+      </div>
+      <input id="ridesPerWeek" type="number" class="form-control" placeholder="Times per week (e.g. 5)" min="1">
+    </div>
+
+    <div id="pricePreview" class="price-preview">
+      <div class="price-row"><span class="label">Distance</span><span class="val" id="previewDist">—</span></div>
+      <div class="price-row"><span class="label">Fuel Cost</span><span class="val" id="previewFuel">—</span></div>
+      <div class="price-row"><span class="label">Platform (10%)</span><span class="val" id="previewComm">—</span></div>
+      <div class="price-row price-total"><span class="label">Total Ride Price</span><span class="val" id="previewTotal">—</span></div>
+    </div>
+
+    <button class="btn-submit" onclick="createRide()">🚗 Post Ride</button>
+
+  </div>
+</div>
+
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGMNgrZc-4zw8mijC68m9oFn5BPFXEleY&libraries=places&callback=initMap" async defer></script>
+<script>
+let map, directionsService, directionsRenderer
+let pickupLat = null, pickupLng = null
+let destinationLat = null, destinationLng = null
+let selectedDays = []
+
+function initMap() {
+  map = new google.maps.Map(document.getElementById("routeMap"), {
+    center: { lat: 52.4862, lng: -1.8904 }, zoom: 10,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] }
+    ]
+  })
+  directionsService = new google.maps.DirectionsService()
+  directionsRenderer = new google.maps.DirectionsRenderer()
+  directionsRenderer.setMap(map)
+
+  const pickupAuto = new google.maps.places.Autocomplete(document.getElementById("pickup"))
+  const destAuto = new google.maps.places.Autocomplete(document.getElementById("destination"))
+
+  pickupAuto.addListener("place_changed", () => {
+    const pl = pickupAuto.getPlace()
+    if (!pl.geometry) return
+    pickupLat = pl.geometry.location.lat()
+    pickupLng = pl.geometry.location.lng()
+    updateRoutePreview()
+  })
+
+  destAuto.addListener("place_changed", () => {
+    const pl = destAuto.getPlace()
+    if (!pl.geometry) return
+    destinationLat = pl.geometry.location.lat()
+    destinationLng = pl.geometry.location.lng()
+    updateRoutePreview()
+  })
+}
+
+function updateRoutePreview() {
+  if (!pickupLat || !destinationLat) return
+  directionsService.route({
+    origin: { lat: pickupLat, lng: pickupLng },
+    destination: { lat: destinationLat, lng: destinationLng },
+    travelMode: "DRIVING"
+  }, (result, status) => {
+    if (status === "OK") {
+      directionsRenderer.setDirections(result)
+      // Estimate price preview
+      const meters = result.routes[0].legs[0].distance.value
+      const miles = meters * 0.000621371
+      const fuel = (miles / 40) * 6.82
+      const comm = fuel * 0.10
+      const total = fuel + comm
+      document.getElementById("pricePreview").style.display = "block"
+      document.getElementById("previewDist").textContent = miles.toFixed(1) + " miles"
+      document.getElementById("previewFuel").textContent = "£" + fuel.toFixed(2)
+      document.getElementById("previewComm").textContent = "£" + comm.toFixed(2)
+      document.getElementById("previewTotal").textContent = "£" + total.toFixed(2)
+    }
+  })
+}
+
+function handleScheduleChange() {
+  const v = document.getElementById("scheduleType").value
+  document.getElementById("scheduleExtra").style.display = (v === "weekly" || v === "fixed") ? "block" : "none"
+}
+
+function toggleDay(el, day) {
+  el.classList.toggle("selected")
+  if (el.classList.contains("selected")) {
+    selectedDays.push(day)
+  } else {
+    selectedDays = selectedDays.filter(d => d !== day)
+  }
+}
+
+async function createRide() {
+  if (!pickupLat || !destinationLat) {
+    alert("Please select pickup and destination from the Google suggestions")
+    return
+  }
+  const token = localStorage.getItem("token")
+  if (!token) { alert("Please login first"); return }
+
+  const body = {
+    pickup: document.getElementById("pickup").value,
+    destination: document.getElementById("destination").value,
+    date: document.getElementById("date").value,
+    time: document.getElementById("time").value,
+    timeType: document.getElementById("timeType").value,
+    seats: document.getElementById("seats").value,
+    scheduleType: document.getElementById("scheduleType").value,
+    daysOfWeek: selectedDays,
+    ridesPerWeek: document.getElementById("ridesPerWeek").value || null,
+    pickupLat, pickupLng, destinationLat, destinationLng
+  }
+
+  const res = await fetch("/api/rides/create", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify(body)
+  })
+  const data = await res.json()
+  alert(data.message || data.error || "Done")
+  if (data.ride) window.location.href = "rides.html"
+}
+</script>
+</body>
+</html>

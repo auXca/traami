@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – Smart Carpooling for Shift Workers</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif}
+nav{display:flex;align-items:center;justify-content:space-between;padding:18px 40px;background:rgba(15,23,42,.95);border-bottom:1px solid #1e293b;position:sticky;top:0;z-index:100}
+.logo{font-size:22px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.nav-links a{color:#94a3b8;text-decoration:none;margin-left:24px;font-size:14px;transition:color .2s}
+.nav-links a:hover{color:#e2e8f0}
+.btn-nav{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff!important;border-radius:8px;padding:8px 18px!important}
+.hero{padding:100px 40px 80px;text-align:center;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(79,70,229,.15),transparent)}
+.hero h1{font-size:clamp(36px,5vw,62px);font-weight:900;line-height:1.1;margin-bottom:20px}
+.hero h1 span{background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{font-size:18px;color:#94a3b8;max-width:560px;margin:0 auto 36px}
+.hero-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+.btn-primary-custom{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:14px 32px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none}
+.btn-secondary-custom{background:transparent;color:#e2e8f0;border:1px solid #334155;border-radius:10px;padding:14px 32px;font-size:16px;font-weight:600;cursor:pointer;text-decoration:none}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:#1e293b;border-top:1px solid #1e293b;border-bottom:1px solid #1e293b}
+.stat{padding:28px;text-align:center;background:#0f172a}
+.stat .num{font-size:36px;font-weight:900;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat .lbl{color:#64748b;font-size:13px;margin-top:4px}
+.features{padding:80px 40px;max-width:1100px;margin:0 auto}
+.features h2{font-size:36px;font-weight:800;text-align:center;margin-bottom:48px}
+.features-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.feat{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:28px;transition:border-color .2s}
+.feat:hover{border-color:#4f46e5}
+.feat-icon{font-size:36px;margin-bottom:14px}
+.feat h3{font-size:17px;font-weight:700;margin-bottom:8px}
+.feat p{color:#64748b;font-size:14px;line-height:1.6}
+.cta{padding:80px 40px;text-align:center;background:linear-gradient(135deg,rgba(79,70,229,.1),rgba(124,58,237,.1));border-top:1px solid #1e293b}
+.cta h2{font-size:36px;font-weight:800;margin-bottom:14px}
+.cta p{color:#94a3b8;margin-bottom:32px;font-size:16px}
+footer{padding:24px 40px;border-top:1px solid #1e293b;text-align:center;color:#475569;font-size:13px}
+</style>
+</head>
+<body>
+<nav>
+  <div class="logo">⚡ Traami</div>
+  <div class="nav-links">
+    <a href="rides.html">Find Rides</a>
+    <a href="create-ride.html">Drive</a>
+    <a href="login.html">Login</a>
+    <a href="register.html" class="btn-nav">Sign Up</a>
+  </div>
+</nav>
+
+<div class="hero">
+  <h1>Carpooling built for<br><span>shift workers & commuters</span></h1>
+  <p>Traami matches you with coworkers on the same route, same schedule — including NHS staff, factory workers, and rota workers.</p>
+  <div class="hero-btns">
+    <a href="rides.html" class="btn-primary-custom">Find a Ride</a>
+    <a href="register.html" class="btn-secondary-custom">Join Free</a>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><div class="num">16%</div><div class="lbl">UK commuters now carpool (2025)</div></div>
+  <div class="stat"><div class="num">£800+</div><div class="lbl">Average annual saving per commuter</div></div>
+  <div class="stat"><div class="num">44%</div><div class="lbl">Would consider carpooling</div></div>
+</div>
+
+<div class="features">
+  <h2>Why Traami is different</h2>
+  <div class="features-grid">
+    <div class="feat"><div class="feat-icon">🔁</div><h3>Rota-Aware Matching</h3><p>Unlike other apps, Traami understands shift work. Set your rota and we match you with colleagues on the same schedule.</p></div>
+    <div class="feat"><div class="feat-icon">🏥</div><h3>Workplace Carpooling</h3><p>Connect with people from the same company or hospital going the same direction — NHS, Amazon, universities and more.</p></div>
+    <div class="feat"><div class="feat-icon">📍</div><h3>Route Corridor Matching</h3><p>Our algorithm doesn't just match exact locations. It finds rides passing near you, like BlaBlaCar — but smarter.</p></div>
+    <div class="feat"><div class="feat-icon">💷</div><h3>Fair Fuel-Based Pricing</h3><p>Ride prices are calculated from actual fuel costs, not surge pricing. Drivers earn, passengers save, platform takes 10%.</p></div>
+    <div class="feat"><div class="feat-icon">⭐</div><h3>Driver Ratings</h3><p>Rate every ride. Traami's trust system means you always know who you're riding with before you request a seat.</p></div>
+    <div class="feat"><div class="feat-icon">💬</div><h3>In-App Chat</h3><p>Message your driver directly before and during the ride. No need to exchange numbers.</p></div>
+  </div>
+</div>
+
+<div class="cta">
+  <h2>Ready to share your commute?</h2>
+  <p>Join thousands of shift workers saving money every week</p>
+  <a href="register.html" class="btn-primary-custom">Get Started Free</a>
+</div>
+
+<footer>© 2026 Traami Ltd · Birmingham, UK · Smart Carpooling for the Workforce</footer>
+</body>
+</html>

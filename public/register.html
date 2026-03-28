@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – Create Account</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:40px;width:100%;max-width:440px}
+.logo{font-size:26px;font-weight:900;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+h2{font-size:21px;font-weight:700;margin-bottom:4px}
+.sub{color:#64748b;font-size:13px;margin-bottom:24px}
+label{font-size:12px;color:#94a3b8;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;margin-bottom:14px;font-size:14px}
+input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+select option{background:#1e293b}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:4px}
+.link{text-align:center;margin-top:16px;font-size:13px;color:#64748b}
+.link a{color:#818cf8;text-decoration:none}
+.divider{border:none;border-top:1px solid #334155;margin:18px 0}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⚡ Traami</div>
+  <h2>Create your account</h2>
+  <p class="sub">Join thousands of shift workers saving on commuting</p>
+
+  <label>Full Name</label>
+  <input id="name" placeholder="Your full name">
+
+  <div class="row2">
+    <div><label>Email</label><input id="email" type="email" placeholder="you@work.com"></div>
+    <div><label>Password</label><input id="password" type="password" placeholder="••••••••"></div>
+  </div>
+
+  <hr class="divider">
+  <div class="section-title">🏢 Workplace (optional)</div>
+
+  <div class="row2">
+    <div><label>Company</label><input id="company" placeholder="e.g. NHS, Amazon"></div>
+    <div><label>Work Location</label><input id="workLocation" placeholder="e.g. Birmingham Hospital"></div>
+  </div>
+
+  <label>Work Schedule</label>
+  <select id="scheduleType">
+    <option value="rota">Rota / Shift work</option>
+    <option value="fixed">Fixed schedule (same time daily)</option>
+    <option value="flexible">Flexible / Remote</option>
+  </select>
+
+  <button class="btn" onclick="register()">Create Account</button>
+  <div class="link">Already have an account? <a href="login.html">Sign in</a></div>
+</div>
+<script>
+async function register() {
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+      company: document.getElementById("company").value,
+      workLocation: document.getElementById("workLocation").value,
+      scheduleType: document.getElementById("scheduleType").value
+    })
+  })
+  const data = await res.json()
+  alert(data.message || data.error)
+  if (data.message === "Account created successfully") window.location.href = "login.html"
+}
+</script>
+</body>
+</html>
