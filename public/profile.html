@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – My Profile</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:800;color:#fff;text-decoration:none}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:16px}
+.page{max-width:560px;margin:36px auto;padding:0 20px}
+h2{font-size:24px;font-weight:800;margin-bottom:6px}
+.sub{color:#64748b;font-size:14px;margin-bottom:28px}
+.avatar{width:72px;height:72px;background:linear-gradient(135deg,#4f46e5,#7c3aed);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:28px;margin-bottom:20px}
+.card h4{font-size:14px;font-weight:700;margin-bottom:18px;color:#94a3b8;text-transform:uppercase;letter-spacing:.5px}
+label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
+input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px}
+input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+select option{background:#1e293b}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;margin-top:16px}
+.rating-display{display:flex;align-items:center;gap:10px;padding:16px;background:#0f172a;border-radius:10px;margin-top:8px}
+.stars{color:#fbbf24;font-size:20px;letter-spacing:2px}
+.rating-num{font-size:28px;font-weight:800}
+.rating-sub{color:#64748b;font-size:13px}
+.msg{border-radius:8px;padding:10px 14px;font-size:13px;margin-top:12px;display:none}
+.msg.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80}
+.msg.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.member-since{color:#64748b;font-size:12px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="logo">⚡ Traami</a>
+  <div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="my-rides.html">My Rides</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</div>
+
+<div class="page">
+  <div class="avatar">👤</div>
+  <h2 id="profileName">Loading...</h2>
+  <p class="sub" id="profileEmail"></p>
+  <p class="member-since" id="memberSince"></p>
+
+  <!-- Rating -->
+  <div class="card">
+    <h4>⭐ Your Rating</h4>
+    <div class="rating-display">
+      <div class="rating-num" id="ratingNum">—</div>
+      <div>
+        <div class="stars" id="ratingStars">☆☆☆☆☆</div>
+        <div class="rating-sub" id="ratingCount">No ratings yet</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit profile -->
+  <div class="card">
+    <h4>✏️ Edit Profile</h4>
+    <div id="editMsg" class="msg"></div>
+    <label>Full Name</label>
+    <input id="name" placeholder="Your name">
+    <label>Company / Employer</label>
+    <input id="company" placeholder="e.g. NHS, Amazon">
+    <label>Work Location</label>
+    <input id="workLocation" placeholder="e.g. QE Hospital Birmingham">
+    <label>Schedule Type</label>
+    <select id="scheduleType">
+      <option value="rota">Rota / Shift work</option>
+      <option value="fixed">Fixed schedule</option>
+      <option value="flexible">Flexible</option>
+    </select>
+    <button class="btn" onclick="saveProfile()">Save Changes</button>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token")
+const userId = localStorage.getItem("userId")
+if (!token) window.location.href = "login.html"
+
+function logout() { localStorage.clear(); window.location.href = "login.html" }
+
+function renderStars(avg) {
+  if (!avg) return "☆☆☆☆☆"
+  const full = Math.floor(avg)
+  const half = avg - full >= 0.5 ? 1 : 0
+  const empty = 5 - full - half
+  return "★".repeat(full) + (half ? "⭐" : "") + "☆".repeat(empty)
+}
+
+async function loadProfile() {
+  const res = await fetch("/api/auth/profile", { headers: { "Authorization": "Bearer " + token } })
+  const user = await res.json()
+  document.getElementById("profileName").textContent = user.name || "—"
+  document.getElementById("profileEmail").textContent = user.email || ""
+  document.getElementById("memberSince").textContent = "Member since " + new Date(user.createdAt).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+  document.getElementById("name").value = user.name || ""
+  document.getElementById("company").value = user.company || ""
+  document.getElementById("workLocation").value = user.workLocation || ""
+  document.getElementById("scheduleType").value = user.scheduleType || "rota"
+
+  // Load ratings
+  const rRes = await fetch("/api/ratings/user/" + userId)
+  const rData = await rRes.json()
+  if (rData.total > 0) {
+    document.getElementById("ratingNum").textContent = rData.average
+    document.getElementById("ratingStars").textContent = renderStars(rData.average)
+    document.getElementById("ratingCount").textContent = rData.total + " rating" + (rData.total > 1 ? "s" : "")
+  }
+}
+
+async function saveProfile() {
+  const msg = document.getElementById("editMsg")
+  const res = await fetch("/api/auth/profile", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({
+      name: document.getElementById("name").value,
+      company: document.getElementById("company").value,
+      workLocation: document.getElementById("workLocation").value,
+      scheduleType: document.getElementById("scheduleType").value
+    })
+  })
+  const data = await res.json()
+  msg.textContent = data.message
+  msg.className = "msg " + (data.message.includes("successfully") ? "ok" : "err")
+  msg.style.display = "block"
+  if (data.message.includes("successfully")) loadProfile()
+}
+
+loadProfile()
+</script>
+</body>
+</html>

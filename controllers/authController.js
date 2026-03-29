@@ -2,70 +2,170 @@ const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
 const User = require("../models/User")
 
-exports.register = async (req,res)=>{
+const JWT_SECRET = process.env.JWT_SECRET || "traami_secret_key"
 
-try{
+// ── REGISTER ──────────────────────────────────────────────
+exports.register = async (req, res) => {
+  try {
+    const { name, email, password, company, workLocation, scheduleType } = req.body
 
-const {
-name,email,password,company,workLocation,scheduleType
-} = req.body
+    if (!name || !email || !password) {
+      return res.status(400).json({ message: "Name, email and password are required" })
+    }
+    if (password.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" })
+    }
 
-const existingUser = await User.findOne({email})
+    const existingUser = await User.findOne({ email: email.toLowerCase() })
+    if (existingUser) {
+      return res.status(400).json({ message: "An account with this email already exists" })
+    }
 
-if(existingUser){
-return res.status(400).json({message:"Email already exists"})
+    const hashedPassword = await bcrypt.hash(password, 10)
+
+    const user = new User({
+      name,
+      email: email.toLowerCase(),
+      password: hashedPassword,
+      company,
+      workLocation,
+      scheduleType: scheduleType || "rota"
+    })
+
+    await user.save()
+    res.json({ message: "Account created successfully" })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }
 
-const hashedPassword = await bcrypt.hash(password,10)
+// ── LOGIN ─────────────────────────────────────────────────
+exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body
 
-const user = new User({
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email and password are required" })
+    }
 
-name,
-email,
-password:hashedPassword,
-company,
-workLocation,
-scheduleType
+    const user = await User.findOne({ email: email.toLowerCase() })
+    if (!user) {
+      return res.status(400).json({ message: "No account found with this email" })
+    }
 
-})
+    if (user.isBanned) {
+      return res.status(403).json({ message: "Your account has been suspended. Contact support." })
+    }
 
-await user.save()
+    const valid = await bcrypt.compare(password, user.password)
+    if (!valid) {
+      return res.status(400).json({ message: "Incorrect password" })
+    }
 
-res.json({message:"Account created successfully"})
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      JWT_SECRET,
+      { expiresIn: "7d" }
+    )
 
-}catch(error){
+    res.json({
+      token,
+      userId: user._id,
+      role: user.role,
+      name: user.name
+    })
 
-res.status(500).json({error:error.message})
-
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }
 
+// ── FORGOT PASSWORD ───────────────────────────────────────
+exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ message: "Email is required" })
+
+    const user = await User.findOne({ email: email.toLowerCase() })
+    if (!user) return res.status(400).json({ message: "No account found with this email" })
+
+    // Generate a simple reset token
+    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
+    user.resetToken = resetToken
+    user.resetTokenExpiry = Date.now() + 3600000 // 1 hour
+    await user.save()
+
+    // In production wire up nodemailer here
+    // For now return token in response (dev only)
+    res.json({
+      message: "Password reset instructions sent to your email",
+      resetToken // remove this in production
+    })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }
-exports.login = async (req,res)=>{
 
-const {email,password} = req.body
+// ── RESET PASSWORD ────────────────────────────────────────
+exports.resetPassword = async (req, res) => {
+  try {
+    const { resetToken, newPassword } = req.body
 
-const user = await User.findOne({email})
+    if (!resetToken || !newPassword) {
+      return res.status(400).json({ message: "Token and new password are required" })
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "Password must be at least 6 characters" })
+    }
 
-if(!user){
-return res.status(400).json({message:"User not found"})
+    const user = await User.findOne({
+      resetToken,
+      resetTokenExpiry: { $gt: Date.now() }
+    })
+
+    if (!user) {
+      return res.status(400).json({ message: "Invalid or expired reset link" })
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10)
+    user.resetToken = undefined
+    user.resetTokenExpiry = undefined
+    await user.save()
+
+    res.json({ message: "Password reset successfully. You can now login." })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }
 
-const valid = await bcrypt.compare(password,user.password)
-
-if(!valid){
-return res.status(400).json({message:"Invalid password"})
+// ── GET MY PROFILE ────────────────────────────────────────
+exports.getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).select("-password -resetToken -resetTokenExpiry")
+    if (!user) return res.status(404).json({ message: "User not found" })
+    res.json(user)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }
 
-const token = jwt.sign(
-{userId:user._id, role:user.role},
-"SECRET_KEY",
-{expiresIn:"7d"}
-)
+// ── UPDATE PROFILE ────────────────────────────────────────
+exports.updateProfile = async (req, res) => {
+  try {
+    const { name, company, workLocation, scheduleType } = req.body
 
-res.json({
-token,
-userId:user._id,
-role:user.role
-})
+    if (!name) return res.status(400).json({ message: "Name is required" })
 
+    await User.findByIdAndUpdate(req.userId, {
+      name, company, workLocation, scheduleType
+    })
+
+    res.json({ message: "Profile updated successfully" })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
 }

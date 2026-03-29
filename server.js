@@ -1,7 +1,7 @@
+require("dotenv").config()
 const express = require("express")
 const http = require("http")
 const { Server } = require("socket.io")
-require("dotenv").config()
 
 const connectDB = require("./config/db")
 
@@ -60,5 +60,24 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {})
 })
 
+
+// 404 handler
+app.use((req, res) => {
+  if (req.path.startsWith('/api/')) {
+    return res.status(404).json({ error: 'Route not found' })
+  }
+  res.status(404).sendFile('404.html', { root: './public' })
+})
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Server error:', err.message)
+  if (req.path.startsWith('/api/')) {
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+  res.status(500).send('Something went wrong. Please try again.')
+})
+
 connectDB()
-server.listen(process.env.PORT || 5000, () => console.log("Server running on port 5000"))
+const PORT = process.env.PORT || 5000
+server.listen(PORT, () => console.log("Server running on port", PORT))

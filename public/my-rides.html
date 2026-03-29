@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – My Rides</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-size:20px;font-weight:800;color:#fff;text-decoration:none}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:16px}
+.page{max-width:800px;margin:32px auto;padding:0 20px}
+.tabs{display:flex;gap:4px;background:#1e293b;border-radius:12px;padding:4px;margin-bottom:24px;border:1px solid #334155}
+.tab{flex:1;text-align:center;padding:10px;border-radius:9px;cursor:pointer;font-size:14px;font-weight:600;color:#64748b;transition:all .2s}
+.tab.active{background:#4f46e5;color:#fff}
+.panel{display:none}
+.panel.active{display:block}
+.ride-card{background:#1e293b;border:1px solid #334155;border-radius:14px;padding:20px;margin-bottom:14px}
+.ride-route{font-size:16px;font-weight:700;margin-bottom:8px}
+.ride-route span{color:#818cf8}
+.meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.badge{border-radius:20px;padding:4px 12px;font-size:12px;font-weight:600}
+.badge-date{background:#1e3a5f;color:#60a5fa}
+.badge-seats{background:#2d1b4e;color:#a78bfa}
+.badge-price{background:#1a3a2f;color:#34d399}
+.badge-status-pending{background:#3b2a00;color:#fbbf24}
+.badge-status-approved{background:#1a3a2f;color:#34d399}
+.badge-status-rejected{background:#3a1a1a;color:#f87171}
+.bookings-section{margin-top:14px;border-top:1px solid #334155;padding-top:14px}
+.bookings-section h5{font-size:13px;color:#64748b;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.booking-row{background:#0f172a;border-radius:8px;padding:10px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;font-size:13px;flex-wrap:wrap;gap:8px}
+.booking-row .pax{font-weight:600}
+.booking-row .pax-sub{color:#64748b;font-size:12px}
+.actions{display:flex;gap:6px}
+.btn-approve{background:#1a3a2f;color:#34d399;border:1px solid #34d399;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer;font-weight:600}
+.btn-reject{background:#3a1a1a;color:#f87171;border:1px solid #f87171;border-radius:7px;padding:5px 12px;font-size:12px;cursor:pointer}
+.empty{text-align:center;color:#64748b;padding:40px 20px}
+.empty .icon{font-size:48px;margin-bottom:12px}
+.btn-new{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block;margin-top:14px}
+h2{font-size:22px;font-weight:800;margin-bottom:6px}
+.sub{color:#64748b;font-size:14px;margin-bottom:24px}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html" class="logo">⚡ Traami</a>
+  <div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="rides.html">Find Rides</a>
+    <a href="profile.html">Profile</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</div>
+
+<div class="page">
+  <h2>My Rides</h2>
+  <p class="sub">Manage rides you drive and track your seat requests</p>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('driver')">🚗 Rides I Drive</div>
+    <div class="tab" onclick="switchTab('passenger')">💺 My Bookings</div>
+  </div>
+
+  <!-- DRIVER PANEL -->
+  <div class="panel active" id="driverPanel">
+    <div id="driverRides"><div class="empty"><div class="icon">🚗</div><p>Loading your rides...</p></div></div>
+    <div style="text-align:center;margin-top:10px"><a href="create-ride.html" class="btn-new">+ Create New Ride</a></div>
+  </div>
+
+  <!-- PASSENGER PANEL -->
+  <div class="panel" id="passengerPanel">
+    <div id="myBookings"><div class="empty"><div class="icon">💺</div><p>Loading your bookings...</p></div></div>
+    <div style="text-align:center;margin-top:10px"><a href="rides.html" class="btn-new">🔍 Find a Ride</a></div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token")
+if (!token) window.location.href = "login.html"
+function logout() { localStorage.clear(); window.location.href = "login.html" }
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach((t,i) => t.classList.toggle("active", (i===0&&tab==="driver")||(i===1&&tab==="passenger")))
+  document.getElementById("driverPanel").classList.toggle("active", tab === "driver")
+  document.getElementById("passengerPanel").classList.toggle("active", tab === "passenger")
+}
+
+function statusBadge(s) {
+  const map = { pending: "badge-status-pending", approved: "badge-status-approved", rejected: "badge-status-rejected" }
+  return `<span class="badge ${map[s]||'badge-status-pending'}">${s.charAt(0).toUpperCase()+s.slice(1)}</span>`
+}
+
+async function loadDriverRides() {
+  const res = await fetch("/api/rides/my-rides", { headers: { "Authorization": "Bearer " + token } })
+  const rides = await res.json()
+  const el = document.getElementById("driverRides")
+  if (!rides.length) { el.innerHTML = '<div class="empty"><div class="icon">🚗</div><p>No rides created yet</p></div>'; return }
+  el.innerHTML = rides.map(r => `
+    <div class="ride-card">
+      <div class="ride-route">${r.pickup} <span>→</span> ${r.destination}</div>
+      <div class="meta">
+        <span class="badge badge-date">📅 ${r.date || "—"}</span>
+        <span class="badge badge-seats">💺 ${r.seatsAvailable}/${r.seats} seats</span>
+        ${r.totalRidePrice ? `<span class="badge badge-price">💷 £${r.totalRidePrice.toFixed(2)}</span>` : ""}
+      </div>
+      ${r.bookings && r.bookings.length ? `
+        <div class="bookings-section">
+          <h5>Seat Requests (${r.bookings.length})</h5>
+          ${r.bookings.map(b => `
+            <div class="booking-row">
+              <div>
+                <div class="pax">👤 ${b.passenger?.name || "Unknown"}</div>
+                <div class="pax-sub">${b.passenger?.email || ""} · ${b.passenger?.company || ""}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:8px">
+                ${statusBadge(b.status)}
+                ${b.status === "pending" ? `
+                  <div class="actions">
+                    <button class="btn-approve" onclick="updateBooking('${b._id}','approve')">✓ Approve</button>
+                    <button class="btn-reject" onclick="updateBooking('${b._id}','reject')">✗ Reject</button>
+                  </div>` : ""}
+              </div>
+            </div>`).join("")}
+        </div>` : '<div style="color:#64748b;font-size:13px;margin-top:10px">No seat requests yet</div>'}
+    </div>`).join("")
+}
+
+async function loadMyBookings() {
+  const res = await fetch("/api/rides/my-bookings", { headers: { "Authorization": "Bearer " + token } })
+  const bookings = await res.json()
+  const el = document.getElementById("myBookings")
+  if (!bookings.length) { el.innerHTML = '<div class="empty"><div class="icon">💺</div><p>No bookings yet</p></div>'; return }
+  el.innerHTML = bookings.map(b => {
+    const ride = b.ride || {}
+    return `
+    <div class="ride-card">
+      <div class="ride-route">${ride.pickup || "—"} <span>→</span> ${ride.destination || "—"}</div>
+      <div class="meta">
+        <span class="badge badge-date">📅 ${ride.date || "—"}</span>
+        ${ride.totalRidePrice ? `<span class="badge badge-price">💷 £${ride.totalRidePrice.toFixed(2)}</span>` : ""}
+        ${statusBadge(b.status)}
+      </div>
+      ${ride.driver ? `<div style="color:#64748b;font-size:13px;margin-top:6px">Driver: ${ride.driver.name || "—"} · ${ride.driver.company || ""}</div>` : ""}
+      ${b.status === "approved" ? '<div style="color:#34d399;font-size:13px;margin-top:8px;font-weight:600">✓ Your seat is confirmed!</div>' : ""}
+      ${b.status === "rejected" ? '<div style="color:#f87171;font-size:13px;margin-top:8px">✗ Not accepted for this ride</div>' : ""}
+    </div>`
+  }).join("")
+}
+
+async function updateBooking(bookingId, action) {
+  const res = await fetch(`/api/bookings/${action}/${bookingId}`, {
+    method: "POST",
+    headers: { "Authorization": "Bearer " + token }
+  })
+  const data = await res.json()
+  if (data.message) loadDriverRides()
+}
+
+// Listen for real-time booking notifications
+const userId = localStorage.getItem("userId")
+if (userId && typeof io !== "undefined") {
+  const socket = io()
+  socket.emit("registerUser", userId)
+  socket.on("bookingStatusUpdate", (data) => {
+    const banner = document.createElement("div")
+    banner.style.cssText = "position:fixed;top:20px;right:20px;background:#1e3a5f;color:#60a5fa;border:1px solid #2563eb;border-radius:10px;padding:14px 20px;font-size:14px;z-index:9999;box-shadow:0 10px 30px rgba(0,0,0,.5)"
+    banner.textContent = data.status === "approved" ? "🎉 Your seat was approved!" : "Your seat request was not accepted"
+    document.body.appendChild(banner)
+    setTimeout(() => banner.remove(), 5000)
+    loadMyBookings()
+  })
+}
+
+loadDriverRides()
+loadMyBookings()
+</script>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+</body>
+</html>
