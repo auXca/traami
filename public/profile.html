@@ -63,8 +63,10 @@ select option{background:#1e293b}
   <div class="card">
     <h4>✏️ Edit Profile</h4>
     <div id="editMsg" class="msg"></div>
-    <label>Full Name</label>
-    <input id="name" placeholder="Your name">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div><label>First Name</label><input id="firstName" placeholder="First name"></div>
+      <div><label>Last Name</label><input id="lastName" placeholder="Last name"></div>
+    </div>
     <label>Company / Employer</label>
     <input id="company" placeholder="e.g. NHS, Amazon">
     <label>Work Location</label>
@@ -97,10 +99,11 @@ function renderStars(avg) {
 async function loadProfile() {
   const res = await fetch("/api/auth/profile", { headers: { "Authorization": "Bearer " + token } })
   const user = await res.json()
-  document.getElementById("profileName").textContent = user.name || "—"
+  document.getElementById("profileName").textContent = (user.firstName || "") + " " + (user.lastName || "")
   document.getElementById("profileEmail").textContent = user.email || ""
   document.getElementById("memberSince").textContent = "Member since " + new Date(user.createdAt).toLocaleDateString("en-GB", { month: "long", year: "numeric" })
-  document.getElementById("name").value = user.name || ""
+  document.getElementById("firstName").value = user.firstName || ""
+  document.getElementById("lastName").value = user.lastName || ""
   document.getElementById("company").value = user.company || ""
   document.getElementById("workLocation").value = user.workLocation || ""
   document.getElementById("scheduleType").value = user.scheduleType || "rota"
@@ -121,7 +124,8 @@ async function saveProfile() {
     method: "PUT",
     headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
     body: JSON.stringify({
-      name: document.getElementById("name").value,
+      firstName: document.getElementById("firstName").value,
+      lastName: document.getElementById("lastName").value,
       company: document.getElementById("company").value,
       workLocation: document.getElementById("workLocation").value,
       scheduleType: document.getElementById("scheduleType").value

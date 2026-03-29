@@ -1,61 +1,144 @@
 const bcrypt = require("bcryptjs")
 const jwt = require("jsonwebtoken")
+const crypto = require("crypto")
 const User = require("../models/User")
+const mailer = require("../utils/mailer")
 
 const JWT_SECRET = process.env.JWT_SECRET || "traami_secret_key"
+
+function genToken() {
+  return crypto.randomBytes(32).toString("hex")
+}
 
 // ── REGISTER ──────────────────────────────────────────────
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, company, workLocation, scheduleType } = req.body
+    const {
+      firstName, lastName, username, email,
+      phone, password, company, workLocation, scheduleType
+    } = req.body
 
-    if (!name || !email || !password) {
-      return res.status(400).json({ message: "Name, email and password are required" })
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" })
+    // Validation
+    if (!firstName || !lastName) return res.status(400).json({ message: "First and last name are required" })
+    if (!username) return res.status(400).json({ message: "Username is required" })
+    if (!email) return res.status(400).json({ message: "Email is required" })
+    if (!password) return res.status(400).json({ message: "Password is required" })
+    if (password.length < 6) return res.status(400).json({ message: "Password must be at least 6 characters" })
+
+    const usernameClean = username.toLowerCase().trim()
+    if (!/^[a-z0-9_]{3,20}$/.test(usernameClean)) {
+      return res.status(400).json({ message: "Username must be 3-20 characters using only letters, numbers or underscores" })
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() })
-    if (existingUser) {
-      return res.status(400).json({ message: "An account with this email already exists" })
-    }
+    // Check uniqueness
+    const existingEmail = await User.findOne({ email: email.toLowerCase() })
+    if (existingEmail) return res.status(400).json({ message: "An account with this email already exists" })
+
+    const existingUsername = await User.findOne({ username: usernameClean })
+    if (existingUsername) return res.status(400).json({ message: "This username is already taken — try another" })
 
     const hashedPassword = await bcrypt.hash(password, 10)
+    const verificationToken = genToken()
 
     const user = new User({
-      name,
-      email: email.toLowerCase(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      username: usernameClean,
+      email: email.toLowerCase().trim(),
+      phone: phone ? phone.trim() : undefined,
       password: hashedPassword,
-      company,
-      workLocation,
-      scheduleType: scheduleType || "rota"
+      company: company?.trim(),
+      workLocation: workLocation?.trim(),
+      scheduleType: scheduleType || "rota",
+      isVerified: false,
+      verificationToken,
+      verificationExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
     })
 
     await user.save()
-    res.json({ message: "Account created successfully" })
+
+    // Send verification email (non-blocking — don't fail if email fails)
+    try {
+      await mailer.sendVerificationEmail(user, verificationToken)
+    } catch (emailErr) {
+      console.error("Verification email failed:", emailErr.message)
+    }
+
+    res.json({
+      message: "Account created successfully",
+      info: "Please check your email to activate your account before logging in."
+    })
 
   } catch (error) {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyPattern)[0]
+      return res.status(400).json({ message: `This ${field} is already in use` })
+    }
     res.status(500).json({ error: error.message })
+  }
+}
+
+// ── VERIFY EMAIL ──────────────────────────────────────────
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.query
+
+    const user = await User.findOne({
+      verificationToken: token,
+      verificationExpiry: { $gt: Date.now() }
+    })
+
+    if (!user) {
+      return res.redirect("/verify-failed.html")
+    }
+
+    user.isVerified = true
+    user.verificationToken = undefined
+    user.verificationExpiry = undefined
+    await user.save()
+
+    // Send welcome email
+    try { await mailer.sendWelcomeEmail(user) } catch (e) {}
+
+    res.redirect("/verify-success.html")
+
+  } catch (error) {
+    res.redirect("/verify-failed.html")
   }
 }
 
 // ── LOGIN ─────────────────────────────────────────────────
 exports.login = async (req, res) => {
   try {
-    const { email, password } = req.body
+    const { login: loginInput, password } = req.body
+    // loginInput can be email, username, or phone
 
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" })
+    if (!loginInput || !password) {
+      return res.status(400).json({ message: "Login and password are required" })
     }
 
-    const user = await User.findOne({ email: email.toLowerCase() })
+    // Find by email, username, or phone
+    const user = await User.findOne({
+      $or: [
+        { email: loginInput.toLowerCase().trim() },
+        { username: loginInput.toLowerCase().trim() },
+        { phone: loginInput.trim() }
+      ]
+    })
+
     if (!user) {
-      return res.status(400).json({ message: "No account found with this email" })
+      return res.status(400).json({ message: "No account found. Check your email, username or phone number." })
     }
 
     if (user.isBanned) {
-      return res.status(403).json({ message: "Your account has been suspended. Contact support." })
+      return res.status(403).json({ message: "Your account has been suspended. Contact support@traami.co.uk" })
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: "Please verify your email before logging in. Check your inbox for the activation link.",
+        needsVerification: true
+      })
     }
 
     const valid = await bcrypt.compare(password, user.password)
@@ -73,8 +156,34 @@ exports.login = async (req, res) => {
       token,
       userId: user._id,
       role: user.role,
-      name: user.name
+      firstName: user.firstName,
+      lastName: user.lastName,
+      username: user.username,
+      name: `${user.firstName} ${user.lastName}`
     })
+
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+// ── RESEND VERIFICATION ───────────────────────────────────
+exports.resendVerification = async (req, res) => {
+  try {
+    const { email } = req.body
+    if (!email) return res.status(400).json({ message: "Email is required" })
+
+    const user = await User.findOne({ email: email.toLowerCase() })
+    if (!user) return res.status(400).json({ message: "No account found with this email" })
+    if (user.isVerified) return res.status(400).json({ message: "This account is already verified" })
+
+    const token = genToken()
+    user.verificationToken = token
+    user.verificationExpiry = Date.now() + 24 * 60 * 60 * 1000
+    await user.save()
+
+    await mailer.sendVerificationEmail(user, token)
+    res.json({ message: "Verification email resent. Please check your inbox." })
 
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -88,20 +197,19 @@ exports.forgotPassword = async (req, res) => {
     if (!email) return res.status(400).json({ message: "Email is required" })
 
     const user = await User.findOne({ email: email.toLowerCase() })
-    if (!user) return res.status(400).json({ message: "No account found with this email" })
+    // Always return success to avoid email enumeration
+    if (!user) return res.json({ message: "If an account exists, a reset link has been sent." })
 
-    // Generate a simple reset token
-    const resetToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-    user.resetToken = resetToken
-    user.resetTokenExpiry = Date.now() + 3600000 // 1 hour
+    const token = genToken()
+    user.resetToken = token
+    user.resetTokenExpiry = Date.now() + 60 * 60 * 1000 // 1 hour
     await user.save()
 
-    // In production wire up nodemailer here
-    // For now return token in response (dev only)
-    res.json({
-      message: "Password reset instructions sent to your email",
-      resetToken // remove this in production
-    })
+    try { await mailer.sendPasswordResetEmail(user, token) } catch (e) {
+      console.error("Reset email failed:", e.message)
+    }
+
+    res.json({ message: "If an account exists, a reset link has been sent." })
 
   } catch (error) {
     res.status(500).json({ error: error.message })
@@ -112,22 +220,14 @@ exports.forgotPassword = async (req, res) => {
 exports.resetPassword = async (req, res) => {
   try {
     const { resetToken, newPassword } = req.body
-
-    if (!resetToken || !newPassword) {
-      return res.status(400).json({ message: "Token and new password are required" })
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: "Password must be at least 6 characters" })
-    }
+    if (!resetToken || !newPassword) return res.status(400).json({ message: "Token and new password are required" })
+    if (newPassword.length < 6) return res.status(400).json({ message: "Password must be at least 6 characters" })
 
     const user = await User.findOne({
       resetToken,
       resetTokenExpiry: { $gt: Date.now() }
     })
-
-    if (!user) {
-      return res.status(400).json({ message: "Invalid or expired reset link" })
-    }
+    if (!user) return res.status(400).json({ message: "Invalid or expired reset link. Please request a new one." })
 
     user.password = await bcrypt.hash(newPassword, 10)
     user.resetToken = undefined
@@ -141,10 +241,24 @@ exports.resetPassword = async (req, res) => {
   }
 }
 
+// ── CHECK USERNAME AVAILABILITY ───────────────────────────
+exports.checkUsername = async (req, res) => {
+  try {
+    const { username } = req.query
+    if (!username) return res.json({ available: false })
+    const clean = username.toLowerCase().trim()
+    if (!/^[a-z0-9_]{3,20}$/.test(clean)) return res.json({ available: false, invalid: true })
+    const exists = await User.findOne({ username: clean })
+    res.json({ available: !exists })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
 // ── GET MY PROFILE ────────────────────────────────────────
 exports.getProfile = async (req, res) => {
   try {
-    const user = await User.findById(req.userId).select("-password -resetToken -resetTokenExpiry")
+    const user = await User.findById(req.userId).select("-password -resetToken -resetTokenExpiry -verificationToken")
     if (!user) return res.status(404).json({ message: "User not found" })
     res.json(user)
   } catch (error) {
@@ -155,16 +269,19 @@ exports.getProfile = async (req, res) => {
 // ── UPDATE PROFILE ────────────────────────────────────────
 exports.updateProfile = async (req, res) => {
   try {
-    const { name, company, workLocation, scheduleType } = req.body
-
-    if (!name) return res.status(400).json({ message: "Name is required" })
+    const { firstName, lastName, phone, company, workLocation, scheduleType } = req.body
+    if (!firstName || !lastName) return res.status(400).json({ message: "First and last name are required" })
 
     await User.findByIdAndUpdate(req.userId, {
-      name, company, workLocation, scheduleType
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      phone: phone?.trim() || undefined,
+      company: company?.trim(),
+      workLocation: workLocation?.trim(),
+      scheduleType
     })
 
     res.json({ message: "Profile updated successfully" })
-
   } catch (error) {
     res.status(500).json({ error: error.message })
   }

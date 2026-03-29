@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – Account Activated!</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:44px 40px;width:100%;max-width:440px;text-align:center}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px}
+.icon{font-size:64px;margin-bottom:16px}
+.badge{display:inline-block;background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);color:#4ade80;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;margin-bottom:16px}
+h2{font-size:22px;font-weight:800;margin-bottom:10px}
+.desc{color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:28px}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;padding:14px 32px;font-size:15px;font-weight:700;display:inline-block}
+.countdown{color:#64748b;font-size:13px;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⚡ Traami</div>
+  <div class="icon">🎉</div>
+  <div class="badge">✓ Email Verified</div>
+  <h2>Your account is active!</h2>
+  <p class="desc">Welcome to Traami. You can now log in and start finding rides with your coworkers.</p>
+  <a href="login.html" class="btn">Sign In Now</a>
+  <p class="countdown" id="countdown">Redirecting to login in <span id="secs">5</span> seconds...</p>
+</div>
+<script>
+let s = 5
+const el = document.getElementById("secs")
+const t = setInterval(() => { s--; el.textContent = s; if (s <= 0) { clearInterval(t); window.location.href = "login.html" } }, 1000)
+</script>
+</body>
+</html>

@@ -7,23 +7,31 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:40px;width:100%;max-width:460px}
-.logo{font-size:26px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
-h2{font-size:21px;font-weight:700;margin-bottom:4px}
-.sub{color:#64748b;font-size:13px;margin-bottom:24px}
-label{font-size:11px;color:#94a3b8;display:block;margin-bottom:4px;margin-top:12px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:40px;width:100%;max-width:480px}
+.logo{font-size:24px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+h2{font-size:20px;font-weight:700;margin-bottom:4px}
+.sub{color:#64748b;font-size:13px;margin-bottom:22px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.field{margin-bottom:14px}
+label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
 input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px;transition:border-color .2s}
 input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
 select option{background:#1e293b}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.divider{border:none;border-top:1px solid #334155;margin:20px 0}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:2px}
-.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:18px}
+.username-wrap{position:relative}
+.username-wrap input{padding-right:36px}
+.username-status{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;display:none}
+.hint{font-size:11px;color:#475569;margin-top:4px}
+.hint.ok{color:#34d399}
+.hint.err{color:#f87171}
+.divider{border:none;border-top:1px solid #334155;margin:18px 0}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:12px}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px}
 .btn:hover{opacity:.9}
-.link{text-align:center;margin-top:16px;font-size:13px;color:#64748b}
+.btn:disabled{opacity:.6;cursor:not-allowed}
+.link{text-align:center;margin-top:14px;font-size:13px;color:#64748b}
 .link a{color:#818cf8;text-decoration:none}
-.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:13px;margin-top:12px;display:none}
-.terms-note{font-size:12px;color:#475569;text-align:center;margin-top:14px;line-height:1.5}
+.err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.terms-note{font-size:11px;color:#475569;text-align:center;margin-top:12px;line-height:1.6}
 .terms-note a{color:#818cf8;text-decoration:none}
 @media(max-width:480px){.row2{grid-template-columns:1fr}}
 </style>
@@ -33,53 +41,144 @@ select option{background:#1e293b}
   <div class="logo">⚡ Traami</div>
   <h2>Create your account</h2>
   <p class="sub">Join shift workers saving on their commute</p>
+
   <div id="err" class="err"></div>
 
-  <label>Full Name</label>
-  <input id="name" placeholder="Your full name">
-
+  <!-- Name row -->
   <div class="row2">
-    <div><label>Email</label><input id="email" type="email" placeholder="you@work.com"></div>
-    <div><label>Password</label><input id="password" type="password" placeholder="Min 6 chars"></div>
+    <div class="field">
+      <label>First Name</label>
+      <input id="firstName" placeholder="e.g. Oscar" autocomplete="given-name">
+    </div>
+    <div class="field">
+      <label>Last Name</label>
+      <input id="lastName" placeholder="e.g. Smith" autocomplete="family-name">
+    </div>
+  </div>
+
+  <!-- Username -->
+  <div class="field">
+    <label>Username</label>
+    <div class="username-wrap">
+      <input id="username" placeholder="e.g. oscar_smith" autocomplete="username" oninput="checkUsername(this.value)">
+      <span class="username-status" id="usernameIcon"></span>
+    </div>
+    <p class="hint" id="usernameHint">3–20 characters, letters, numbers and underscores only</p>
+  </div>
+
+  <!-- Email + Password row -->
+  <div class="row2">
+    <div class="field">
+      <label>Email</label>
+      <input id="email" type="email" placeholder="you@work.com" autocomplete="email">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input id="password" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+    </div>
+  </div>
+
+  <!-- Phone -->
+  <div class="field">
+    <label>Phone Number <span style="color:#475569;font-weight:400">(optional — for login)</span></label>
+    <input id="phone" type="tel" placeholder="+44 7700 000000" autocomplete="tel">
+    <p class="hint">You can use your phone number to log in instead of your email</p>
   </div>
 
   <hr class="divider">
-  <div class="section-title">🏢 Workplace (optional but helps matching)</div>
+  <div class="section-title">🏢 Workplace — helps us match you with coworkers</div>
 
   <div class="row2">
-    <div><label>Company / Employer</label><input id="company" placeholder="e.g. NHS, Amazon, Jaguar"></div>
-    <div><label>Work Location</label><input id="workLocation" placeholder="e.g. QE Hospital B'ham"></div>
+    <div class="field">
+      <label>Company / Employer</label>
+      <input id="company" placeholder="e.g. NHS, Amazon, Jaguar">
+    </div>
+    <div class="field">
+      <label>Work Location</label>
+      <input id="workLocation" placeholder="e.g. QE Hospital B'ham">
+    </div>
   </div>
 
-  <label>Work Schedule</label>
-  <select id="scheduleType">
-    <option value="rota">Rota / Shift work (NHS, factory etc)</option>
-    <option value="fixed">Fixed schedule (same time every day)</option>
-    <option value="flexible">Flexible / Remote</option>
-  </select>
+  <div class="field">
+    <label>Work Schedule</label>
+    <select id="scheduleType">
+      <option value="rota">Rota / Shift work (NHS, factory, warehouse)</option>
+      <option value="fixed">Fixed schedule (same time every day)</option>
+      <option value="flexible">Flexible / Remote</option>
+    </select>
+  </div>
 
   <button class="btn" onclick="register()" id="btn">Create Account</button>
   <p class="terms-note">By signing up you agree to our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a></p>
   <div class="link">Already have an account? <a href="login.html">Sign in</a></div>
 </div>
+
 <script>
+let usernameAvailable = false
+let usernameTimer = null
+
+function checkUsername(val) {
+  clearTimeout(usernameTimer)
+  const icon = document.getElementById("usernameIcon")
+  const hint = document.getElementById("usernameHint")
+  icon.style.display = "none"
+  usernameAvailable = false
+
+  if (!val) { hint.textContent = "3–20 characters, letters, numbers and underscores only"; hint.className = "hint"; return }
+  if (!/^[a-z0-9_]{3,20}$/i.test(val)) {
+    hint.textContent = "Only letters, numbers and underscores allowed (3–20 chars)"
+    hint.className = "hint err"
+    return
+  }
+
+  hint.textContent = "Checking..."
+  hint.className = "hint"
+
+  usernameTimer = setTimeout(async () => {
+    const res = await fetch("/api/auth/check-username?username=" + encodeURIComponent(val))
+    const data = await res.json()
+    icon.style.display = "block"
+    if (data.available) {
+      icon.textContent = "✅"
+      hint.textContent = "@" + val.toLowerCase() + " is available"
+      hint.className = "hint ok"
+      usernameAvailable = true
+    } else {
+      icon.textContent = "❌"
+      hint.textContent = data.invalid ? "Invalid username format" : "Username already taken — try another"
+      hint.className = "hint err"
+      usernameAvailable = false
+    }
+  }, 500)
+}
+
 async function register() {
-  const name = document.getElementById("name").value.trim()
+  const firstName = document.getElementById("firstName").value.trim()
+  const lastName = document.getElementById("lastName").value.trim()
+  const username = document.getElementById("username").value.trim()
   const email = document.getElementById("email").value.trim()
   const password = document.getElementById("password").value
+  const phone = document.getElementById("phone").value.trim()
   const err = document.getElementById("err")
   const btn = document.getElementById("btn")
+
   err.style.display = "none"
-  if (!name || !email || !password) { err.textContent = "Name, email and password are required"; err.style.display = "block"; return }
-  if (password.length < 6) { err.textContent = "Password must be at least 6 characters"; err.style.display = "block"; return }
+
+  if (!firstName || !lastName) { show("First and last name are required"); return }
+  if (!username) { show("Please choose a username"); return }
+  if (!usernameAvailable) { show("Please choose a valid, available username"); return }
+  if (!email) { show("Email is required"); return }
+  if (!password || password.length < 6) { show("Password must be at least 6 characters"); return }
+
   btn.textContent = "Creating account..."
   btn.disabled = true
+
   try {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name, email, password,
+        firstName, lastName, username, email, phone, password,
         company: document.getElementById("company").value,
         workLocation: document.getElementById("workLocation").value,
         scheduleType: document.getElementById("scheduleType").value
@@ -87,19 +186,24 @@ async function register() {
     })
     const data = await res.json()
     if (data.message === "Account created successfully") {
-      window.location.href = "login.html"
+      window.location.href = "register-success.html"
     } else {
-      err.textContent = data.message || "Registration failed"
-      err.style.display = "block"
+      show(data.message || "Registration failed")
       btn.textContent = "Create Account"
       btn.disabled = false
     }
-  } catch(e) {
-    err.textContent = "Connection error. Please try again."
-    err.style.display = "block"
+  } catch (e) {
+    show("Connection error. Please try again.")
     btn.textContent = "Create Account"
     btn.disabled = false
   }
+}
+
+function show(msg) {
+  const err = document.getElementById("err")
+  err.textContent = msg
+  err.style.display = "block"
+  err.scrollIntoView({ behavior: "smooth", block: "nearest" })
 }
 </script>
 </body>

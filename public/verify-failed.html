@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – Verification Failed</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:44px 40px;width:100%;max-width:440px;text-align:center}
+.logo{font-size:20px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:20px}
+.icon{font-size:64px;margin-bottom:16px}
+h2{font-size:22px;font-weight:800;margin-bottom:10px}
+.desc{color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:24px}
+input{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:12px 14px;width:100%;font-size:14px;margin-bottom:10px}
+input:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:12px;width:100%;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px}
+.link{font-size:13px;color:#64748b}
+.link a{color:#818cf8;text-decoration:none}
+.msg{font-size:13px;color:#34d399;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">⚡ Traami</div>
+  <div class="icon">⚠️</div>
+  <h2>Verification link expired</h2>
+  <p class="desc">This activation link has expired or is invalid. Links are valid for 24 hours. Enter your email below to get a new one.</p>
+  <input id="email" type="email" placeholder="Your email address">
+  <button class="btn" onclick="resend()">Send New Activation Email</button>
+  <p id="msg" class="msg"></p>
+  <div class="link"><a href="login.html">← Back to login</a></div>
+</div>
+<script>
+async function resend() {
+  const email = document.getElementById("email").value.trim()
+  if (!email) { alert("Please enter your email"); return }
+  const res = await fetch("/api/auth/resend-verification", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email })
+  })
+  const data = await res.json()
+  const msg = document.getElementById("msg")
+  msg.textContent = data.message
+  msg.style.display = "block"
+}
+</script>
+</body>
+</html>

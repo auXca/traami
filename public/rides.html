@@ -59,6 +59,17 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;
 </style>
 </head>
 <body>
+<script>
+// Auth guard — redirect to login if not logged in
+(function() {
+  const token = localStorage.getItem("token")
+  if (!token) {
+    sessionStorage.setItem("redirectAfterLogin", window.location.href)
+    window.location.href = "login.html?next=rides"
+  }
+})()
+</script>
+
 
 <div class="topbar">
   <a href="index.html" class="logo">⚡ Traami</a>
@@ -354,7 +365,12 @@ async function submitRating() {
 }
 
 // Auth link
-if (token) document.getElementById("authLink").textContent = "Dashboard"
+const firstName = localStorage.getItem("firstName")
+if (token) {
+  const el = document.getElementById("authLink")
+  el.textContent = firstName ? firstName + " →" : "Dashboard"
+  el.href = "dashboard.html"
+}
 
 </script>
 <script type="text/javascript">var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src="https://embed.tawk.to/YOUR_TAWK_ID/default";s1.charset="UTF-8";s1.setAttribute("crossorigin","*");s0.parentNode.insertBefore(s1,s0);})();</script>
