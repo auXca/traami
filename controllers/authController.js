@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken")
 const crypto = require("crypto")
 const User = require("../models/User")
 const mailer = require("../utils/mailer")
+const Settings = require("../models/Settings")
 
 const JWT_SECRET = process.env.JWT_SECRET || "traami_secret_key"
 
@@ -55,19 +56,38 @@ exports.register = async (req, res) => {
       verificationExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
     })
 
-    await user.save()
+    // Check if email verification is enabled in admin settings
+    const verifSetting = await Settings.findOne({ key: "emailVerification" })
+    const verificationEnabled = verifSetting ? verifSetting.value : true
 
-    // Send verification email (non-blocking — don't fail if email fails)
-    try {
-      await mailer.sendVerificationEmail(user, verificationToken)
-    } catch (emailErr) {
-      console.error("Verification email failed:", emailErr.message)
+    if (!verificationEnabled) {
+      // Skip verification — auto-verify the user
+      user.isVerified = true
+      user.verificationToken = undefined
+      user.verificationExpiry = undefined
     }
 
-    res.json({
-      message: "Account created successfully",
-      info: "Please check your email to activate your account before logging in."
-    })
+    await user.save()
+
+    if (verificationEnabled) {
+      // Send verification email
+      try {
+        await mailer.sendVerificationEmail(user, verificationToken)
+      } catch (emailErr) {
+        console.error("Verification email failed:", emailErr.message)
+      }
+      res.json({
+        message: "Account created successfully",
+        info: "Please check your email to activate your account before logging in."
+      })
+    } else {
+      // Auto-verified — send welcome email
+      try { await mailer.sendWelcomeEmail(user) } catch (e) {}
+      res.json({
+        message: "Account created successfully",
+        info: "You can log in immediately."
+      })
+    }
 
   } catch (error) {
     if (error.code === 11000) {

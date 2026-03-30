@@ -57,6 +57,7 @@
     <a href="#" onclick="showSection('users')">👤 Users</a>
     <a href="#" onclick="showSection('rides')">🚗 Rides</a>
     <a href="#" onclick="showSection('earnings')">💰 Earnings</a>
+    <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
     <hr style="border-color:#2d3148; margin:16px 0;">
     <a href="#" onclick="adminLogout()" style="color:#ef4444;">🚪 Logout</a>
   </div>
@@ -107,7 +108,7 @@
         <table class="table">
           <thead>
             <tr>
-              <th>Name</th><th>Email</th><th>Company</th><th>Schedule</th><th>Status</th><th>Actions</th>
+              <th>Name</th><th>Email</th><th>Company</th><th>Schedule</th><th>Verified</th><th>Status</th><th>Actions</th>
             </tr>
           </thead>
           <tbody id="userTable"></tbody>
@@ -156,6 +157,51 @@
       </div>
     </div>
 
+
+    <!-- SETTINGS -->
+    <div id="settingsSection" style="display:none;">
+      <h4 style="margin-bottom:24px;">Platform Settings</h4>
+
+      <div class="section">
+        <h5>📧 Email Verification</h5>
+        <p style="color:#64748b;font-size:14px;margin-bottom:20px;line-height:1.7">
+          When ON, new users must click a link in their email before they can log in.
+          This prevents fake/fraudulent signups. Turn OFF only during testing or onboarding events.
+        </p>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;background:#0f172a;border-radius:12px;padding:20px 24px;border:1px solid #2d3148">
+          <div>
+            <div style="font-size:15px;font-weight:700;color:#e2e8f0" id="verifLabel">Email Verification</div>
+            <div style="font-size:13px;color:#64748b;margin-top:4px" id="verifDesc">Loading...</div>
+          </div>
+          <label style="position:relative;display:inline-block;width:56px;height:28px;cursor:pointer">
+            <input type="checkbox" id="verifToggle" onchange="toggleVerification(this.checked)"
+              style="opacity:0;width:0;height:0;position:absolute">
+            <span id="verifTrack" style="position:absolute;inset:0;background:#334155;border-radius:14px;transition:background .3s">
+              <span id="verifThumb" style="position:absolute;top:3px;left:3px;width:22px;height:22px;background:white;border-radius:50%;transition:transform .3s;box-shadow:0 1px 4px rgba(0,0,0,.3)"></span>
+            </span>
+          </label>
+        </div>
+
+        <div id="verifMsg" style="margin-top:14px;padding:12px 16px;border-radius:8px;font-size:14px;display:none"></div>
+      </div>
+
+      <div class="section" style="margin-top:20px">
+        <h5>👤 Manually Verify a User</h5>
+        <p style="color:#64748b;font-size:14px;margin-bottom:16px">
+          If a user didn't receive their verification email, you can activate their account manually here.
+        </p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <input id="manualVerifyId" placeholder="Paste User ID from the Users table"
+            style="flex:1;min-width:220px;background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:8px;padding:10px 14px;font-size:14px">
+          <button onclick="manualVerify()" style="background:#4f46e5;color:white;border:none;border-radius:8px;padding:10px 20px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">
+            ✓ Verify User
+          </button>
+        </div>
+        <div id="manualVerifyMsg" style="margin-top:12px;font-size:14px;color:#34d399;display:none"></div>
+      </div>
+
+    </div>
   </div>
 </div>
 
@@ -211,13 +257,14 @@ function showDashboard() {
 }
 
 function showSection(name) {
-  ["overviewSection","usersSection","ridesSection","earningsSection"].forEach(id => {
+  ["overviewSection","usersSection","ridesSection","earningsSection","settingsSection"].forEach(id => {
     document.getElementById(id).style.display = "none"
   })
   document.getElementById(name + "Section").style.display = "block"
   if (name === "users") loadUsers()
   if (name === "rides") loadRides()
   if (name === "earnings") loadEarnings()
+  if (name === "settings") loadSettings()
 }
 
 async function loadOverview() {
@@ -264,14 +311,24 @@ async function loadUsers() {
         ? `<span class="badge-banned">Banned</span>`
         : `<span class="badge-active">Active</span>`
 
+      const verified = u.isVerified
+        ? `<span style="background:#1a3a2f;color:#34d399;padding:3px 10px;border-radius:20px;font-size:12px">✓ Verified</span>`
+        : `<span style="background:#3b1a1a;color:#f87171;padding:3px 10px;border-radius:20px;font-size:12px">✗ Unverified</span>`
+
+      const verifyBtn = !u.isVerified
+        ? `<button onclick="manualVerifyFromTable('${u._id}')" class="btn btn-sm btn-success me-1">Verify</button>`
+        : ""
+
       table.innerHTML += `
         <tr>
-          <td>${u.name || "—"}</td>
+          <td>${(u.firstName || "") + " " + (u.lastName || u.name || "—")}</td>
           <td>${u.email}</td>
           <td>${u.company || "—"}</td>
           <td>${u.scheduleType || "—"}</td>
+          <td>${verified}</td>
           <td>${status}</td>
           <td>
+            ${verifyBtn}
             <button onclick="banUser('${u._id}')" class="btn btn-sm btn-warning me-1">
               ${u.isBanned ? "Unban" : "Ban"}
             </button>
@@ -348,6 +405,70 @@ async function deleteRide(id) {
   const data = await res.json()
   alert(data.message)
   loadRides()
+}
+
+
+async function loadSettings() {
+  const res = await fetch("/api/admin/settings", { headers: authHeaders() })
+  const data = await res.json()
+  const enabled = data.emailVerification !== false
+  const toggle = document.getElementById("verifToggle")
+  const track  = document.getElementById("verifTrack")
+  const thumb  = document.getElementById("verifThumb")
+  const desc   = document.getElementById("verifDesc")
+  toggle.checked = enabled
+  track.style.background  = enabled ? "#4f46e5" : "#334155"
+  thumb.style.transform   = enabled ? "translateX(28px)" : "translateX(0)"
+  desc.textContent = enabled
+    ? "ON — New users must verify their email before logging in"
+    : "OFF — New users can log in immediately without email verification"
+}
+
+async function toggleVerification(enabled) {
+  const track  = document.getElementById("verifTrack")
+  const thumb  = document.getElementById("verifThumb")
+  const desc   = document.getElementById("verifDesc")
+  const msg    = document.getElementById("verifMsg")
+
+  track.style.background = enabled ? "#4f46e5" : "#334155"
+  thumb.style.transform  = enabled ? "translateX(28px)" : "translateX(0)"
+
+  const res = await fetch("/api/admin/settings/email-verification", {
+    method: "PUT",
+    headers: authHeaders(),
+    body: JSON.stringify({ enabled })
+  })
+  const data = await res.json()
+
+  msg.textContent = data.message
+  msg.style.background = enabled ? "rgba(79,70,229,.15)" : "rgba(251,191,36,.1)"
+  msg.style.border      = enabled ? "1px solid #4f46e5" : "1px solid #fbbf24"
+  msg.style.color       = enabled ? "#818cf8" : "#fbbf24"
+  msg.style.display     = "block"
+  setTimeout(() => msg.style.display = "none", 4000)
+
+  desc.textContent = enabled
+    ? "ON — New users must verify their email before logging in"
+    : "OFF — New users can log in immediately without email verification"
+}
+
+async function manualVerifyFromTable(userId) {
+  const res = await fetch("/api/admin/verify/" + userId, { method: "PUT", headers: authHeaders() })
+  const data = await res.json()
+  alert(data.message || data.error)
+  loadUsers()
+}
+
+async function manualVerify() {
+  const userId = document.getElementById("manualVerifyId").value.trim()
+  const msg    = document.getElementById("manualVerifyMsg")
+  if (!userId) { alert("Please paste a User ID"); return }
+  const res = await fetch("/api/admin/verify/" + userId, { method: "PUT", headers: authHeaders() })
+  const data = await res.json()
+  msg.textContent = data.message || data.error
+  msg.style.color = data.error ? "#f87171" : "#34d399"
+  msg.style.display = "block"
+  document.getElementById("manualVerifyId").value = ""
 }
 
 function showError(msg) {

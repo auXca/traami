@@ -121,3 +121,54 @@ exports.detectFraud = async (req, res) => {
     res.status(500).json({ error: error.message })
   }
 }
+
+// ── SETTINGS ──────────────────────────────────────────────
+const Settings = require("../models/Settings")
+
+// Get all settings
+exports.getSettings = async (req, res) => {
+  try {
+    const settings = await Settings.find()
+    const obj = {}
+    settings.forEach(s => obj[s.key] = s.value)
+    // Default emailVerification to true if not set
+    if (obj.emailVerification === undefined) obj.emailVerification = true
+    res.json(obj)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+// Toggle email verification on/off
+exports.toggleEmailVerification = async (req, res) => {
+  try {
+    const { enabled } = req.body
+    await Settings.findOneAndUpdate(
+      { key: "emailVerification" },
+      { key: "emailVerification", value: enabled, updatedAt: new Date() },
+      { upsert: true, new: true }
+    )
+    res.json({
+      message: enabled
+        ? "Email verification is now ON — new users must verify their email"
+        : "Email verification is now OFF — new users can log in immediately"
+    })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
+
+// Manually verify a user
+exports.verifyUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.userId)
+    if (!user) return res.status(404).json({ message: "User not found" })
+    user.isVerified = true
+    user.verificationToken = undefined
+    user.verificationExpiry = undefined
+    await user.save()
+    res.json({ message: `${user.firstName} ${user.lastName} has been manually verified` })
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+}
