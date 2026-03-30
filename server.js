@@ -12,6 +12,7 @@ const bookingRoutes = require("./routes/bookingRoutes")
 const matchRoutes = require("./routes/matchRoutes")
 const scheduleRoutes = require("./routes/scheduleRoutes")
 const ratingRoutes = require("./routes/ratingRoutes")
+const onboardRoutes = require("./routes/onboardRoutes")
 
 const app = express()
 const server = http.createServer(app)
@@ -32,6 +33,7 @@ app.use("/api/bookings", bookingRoutes)
 app.use("/api/match", matchRoutes)
 app.use("/api/schedule", scheduleRoutes)
 app.use("/api/ratings", ratingRoutes)
+app.use("/api/onboard", onboardRoutes)
 
 let activeDrivers = {}
 

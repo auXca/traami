@@ -40,6 +40,11 @@ const UserSchema = new mongoose.Schema({
   resetToken:  { type: String },
   resetTokenExpiry: { type: Date },
 
+  // Home location (for manual onboarding match)
+  homeAddress: { type: String, trim: true },
+  homeLat:     { type: Number },
+  homeLng:     { type: Number },
+
   createdAt: { type: Date, default: Date.now }
 })
 

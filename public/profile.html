@@ -79,6 +79,22 @@ select option{background:#1e293b}
     </select>
     <button class="btn" onclick="saveProfile()">Save Changes</button>
   </div>
+
+  <!-- Home Location -->
+  <div class="card">
+    <h4>🏠 Home Location</h4>
+    <p style="color:#64748b;font-size:13px;margin-bottom:14px;line-height:1.6">
+      Setting your home location lets drivers using Quick Match check if their route passes near you.
+      It also helps with bus stop suggestions. Only Traami users can see this.
+    </p>
+    <div id="homeLocMsg" class="msg"></div>
+    <label>Home Address</label>
+    <input id="homeAddress" placeholder="Start typing your home address...">
+    <input type="hidden" id="homeLat">
+    <input type="hidden" id="homeLng">
+    <p style="font-size:12px;color:#475569;margin-top:6px;margin-bottom:14px">Select from the dropdown — this saves your exact coordinates for route matching</p>
+    <button class="btn" onclick="saveHomeLocation()" style="margin-top:0">Save Home Location</button>
+  </div>
 </div>
 
 <script>
@@ -107,6 +123,9 @@ async function loadProfile() {
   document.getElementById("company").value = user.company || ""
   document.getElementById("workLocation").value = user.workLocation || ""
   document.getElementById("scheduleType").value = user.scheduleType || "rota"
+  if (user.homeAddress) document.getElementById("homeAddress").value = user.homeAddress
+  if (user.homeLat) document.getElementById("homeLat").value = user.homeLat
+  if (user.homeLng) document.getElementById("homeLng").value = user.homeLng
 
   // Load ratings
   const rRes = await fetch("/api/ratings/user/" + userId)
@@ -139,6 +158,41 @@ async function saveProfile() {
 }
 
 loadProfile()
+
+async function saveHomeLocation() {
+  const address = document.getElementById("homeAddress").value.trim()
+  const homeLat  = document.getElementById("homeLat").value
+  const homeLng  = document.getElementById("homeLng").value
+  const msg = document.getElementById("homeLocMsg")
+  if (!homeLat || !homeLng) {
+    msg.textContent = "Please select your address from the Google suggestions dropdown"
+    msg.className = "msg err"
+    msg.style.display = "block"
+    return
+  }
+  const res = await fetch("/api/onboard/home-location", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token },
+    body: JSON.stringify({ homeAddress: address, homeLat: parseFloat(homeLat), homeLng: parseFloat(homeLng) })
+  })
+  const data = await res.json()
+  msg.textContent = data.message
+  msg.className = "msg " + (data.message.includes("saved") ? "ok" : "err")
+  msg.style.display = "block"
+}
+
+function initHomeAutocomplete() {
+  if (typeof google === "undefined") return
+  const input = document.getElementById("homeAddress")
+  const auto = new google.maps.places.Autocomplete(input, { componentRestrictions: { country: "gb" } })
+  auto.addListener("place_changed", () => {
+    const pl = auto.getPlace()
+    if (!pl.geometry) return
+    document.getElementById("homeLat").value = pl.geometry.location.lat()
+    document.getElementById("homeLng").value = pl.geometry.location.lng()
+  })
+}
 </script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGMNgrZc-4zw8mijC68m9oFn5BPFXEleY&libraries=places&callback=initHomeAutocomplete" async defer></script>
 </body>
 </html>

@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Traami – Quick Match</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.logo{font-size:20px;font-weight:800;color:#fff;text-decoration:none}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:14px}
+.page{max-width:760px;margin:32px auto;padding:0 20px 60px}
+
+/* Header */
+.hero{text-align:center;margin-bottom:32px}
+.hero h1{font-size:26px;font-weight:800;margin-bottom:8px}
+.hero p{color:#64748b;font-size:15px;line-height:1.7;max-width:520px;margin:0 auto}
+
+/* Steps pill -->
+.steps-row{display:flex;align-items:center;gap:0;margin-bottom:32px}
+.step-pill{flex:1;text-align:center;padding:10px 6px;font-size:12px;font-weight:600;color:#475569;border-bottom:2px solid #1e293b;transition:all .2s}
+.step-pill.active{color:#818cf8;border-bottom-color:#4f46e5}
+.step-pill.done{color:#34d399;border-bottom-color:#10b981}
+
+/* Cards */
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px;margin-bottom:20px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.card-sub{color:#64748b;font-size:13px;margin-bottom:16px;line-height:1.6}
+
+/* Form */
+label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+input,select,textarea{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px;transition:border-color .2s}
+input:focus,select:focus,textarea:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+select option{background:#1e293b}
+textarea{resize:vertical;min-height:72px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.search-row{display:flex;gap:10px}
+.search-row input{flex:1}
+
+/* Buttons */
+.btn{border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff}
+.btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:8px}
+
+/* Person card */
+.person-card{background:#0f172a;border:1px solid #334155;border-radius:12px;padding:18px;display:flex;align-items:center;gap:16px}
+.person-avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4f46e5,#7c3aed);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800;color:#fff;flex-shrink:0}
+.person-info h4{font-size:16px;font-weight:700;margin-bottom:4px}
+.person-info p{font-size:13px;color:#64748b}
+.person-badge{background:#1e3a5f;color:#60a5fa;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;display:inline-block;margin-top:6px}
+.person-badge.green{background:#1a3a2f;color:#34d399}
+.person-badge.amber{background:#3b2a00;color:#fbbf24}
+
+/* Match result */
+.match-result{border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid}
+.match-great{background:rgba(16,185,129,.08);border-color:rgba(16,185,129,.3)}
+.match-good{background:rgba(79,70,229,.08);border-color:rgba(79,70,229,.3)}
+.match-possible{background:rgba(251,191,36,.06);border-color:rgba(251,191,36,.2)}
+.match-none{background:rgba(239,68,68,.07);border-color:rgba(239,68,68,.2)}
+.match-icon{font-size:28px;margin-bottom:10px}
+.match-title{font-size:16px;font-weight:700;margin-bottom:6px}
+.match-msg{font-size:14px;color:#94a3b8;line-height:1.6}
+.match-stats{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+.stat-chip{background:#0f172a;border:1px solid #334155;border-radius:8px;padding:8px 14px;font-size:12px;text-align:center}
+.stat-chip .val{font-size:18px;font-weight:800;color:#818cf8;display:block}
+.stat-chip .lbl{color:#64748b;margin-top:2px}
+
+/* Bus stops */
+.bus-section{margin-top:16px}
+.bus-section h5{font-size:13px;font-weight:700;color:#94a3b8;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.bus-stop{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:12px 16px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.bus-stop .name{font-size:14px;font-weight:600}
+.bus-stop .dist{font-size:12px;color:#64748b}
+.bus-pass{background:#1a3a2f;color:#34d399;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600}
+.bus-miss{background:#2d1b4e;color:#a78bfa;border-radius:6px;padding:3px 8px;font-size:11px}
+
+/* My rides for confirm step */
+.ride-option{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .2s;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px}
+.ride-option:hover,.ride-option.selected{border-color:#4f46e5}
+.ride-option.selected{background:rgba(79,70,229,.08)}
+.ride-route{font-size:14px;font-weight:700}
+.ride-meta-sm{font-size:12px;color:#64748b;margin-top:4px}
+
+/* Success */
+.success-box{text-align:center;padding:32px 20px}
+.success-box .icon{font-size:56px;margin-bottom:16px}
+.success-box h2{font-size:22px;font-weight:800;margin-bottom:8px}
+.success-box p{color:#64748b;font-size:15px;line-height:1.7;margin-bottom:24px}
+
+/* Map */
+#routeMap{height:220px;border-radius:12px;overflow:hidden;border:1px solid #334155;margin-bottom:16px;display:none}
+
+/* Alerts */
+.alert{border-radius:10px;padding:12px 16px;font-size:14px;margin-bottom:14px;display:none}
+.alert-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.alert-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.loading{color:#64748b;font-size:14px;text-align:center;padding:20px}
+
+@media(max-width:540px){.row2{grid-template-columns:1fr}.search-row{flex-direction:column}.match-stats{gap:8px}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="logo">⚡ Traami</a>
+  <div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="rides.html">Find Rides</a>
+    <a href="my-rides.html">My Rides</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="hero">
+    <h1>🤝 Quick Match</h1>
+    <p>Met someone at work? Search them by username or phone, check if your route passes near their home or a bus stop, and add them to your ride in seconds.</p>
+  </div>
+
+  <!-- Steps indicator -->
+  <div class="steps-row">
+    <div class="step-pill active" id="pill1">1 · Find Person</div>
+    <div class="step-pill" id="pill2">2 · Check Route</div>
+    <div class="step-pill" id="pill3">3 · Confirm Ride</div>
+  </div>
+
+  <!-- ── STEP 1: Find person ── -->
+  <div id="step1">
+    <div class="card">
+      <h3>🔍 Find Someone</h3>
+      <p class="card-sub">Search by their Traami username (e.g. <strong>oscar_smith</strong>) or their phone number. They must have a Traami account.</p>
+      <div id="searchAlert" class="alert alert-err"></div>
+      <div class="search-row">
+        <input id="searchQuery" placeholder="@username or +44 7700 000000"
+          onkeydown="if(event.key==='Enter') searchPerson()">
+        <button class="btn btn-primary" onclick="searchPerson()" id="searchBtn">Search</button>
+      </div>
+    </div>
+
+    <!-- Person result -->
+    <div id="personResult" style="display:none">
+      <div class="card">
+        <h3>👤 Person Found</h3>
+        <div class="person-card" id="personCard"></div>
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" onclick="goToStep2()">Check Route Compatibility →</button>
+          <button class="btn btn-outline" onclick="resetSearch()">Search Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: Check route ── -->
+  <div id="step2" style="display:none">
+    <div class="card">
+      <h3>🗺️ Your Route</h3>
+      <p class="card-sub">Enter your pickup and destination so we can check if your route passes near their home or a bus stop they can walk to.</p>
+
+      <div id="routeAlert" class="alert alert-err"></div>
+
+      <label>Your Pickup</label>
+      <input id="driverPickup" placeholder="Where you're driving from" style="margin-bottom:12px">
+
+      <label>Your Destination</label>
+      <input id="driverDest" placeholder="Where you're driving to" style="margin-bottom:16px">
+
+      <div id="routeMap"></div>
+
+      <!-- Person home location status -->
+      <div id="homeStatus" style="margin-bottom:16px"></div>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="checkRoute()" id="checkBtn">Check Route Match</button>
+        <button class="btn btn-outline" onclick="goToStep1()">← Back</button>
+      </div>
+    </div>
+
+    <!-- Route result -->
+    <div id="routeResult" style="display:none"></div>
+
+    <!-- Proceed button -->
+    <div id="proceedBtn" style="display:none;margin-top:4px">
+      <button class="btn btn-success" style="width:100%;padding:14px" onclick="goToStep3()">
+        ✓ Looks good — Confirm the Ride →
+      </button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: Confirm ride ── -->
+  <div id="step3" style="display:none">
+    <div class="card">
+      <h3>🚗 Select Your Ride</h3>
+      <p class="card-sub">Choose which of your upcoming rides to add them to.</p>
+      <div id="myRidesList"><div class="loading">Loading your rides...</div></div>
+    </div>
+
+    <div class="card" id="dropoffCard" style="display:none">
+      <h3>📍 Drop-off Note <span style="font-weight:400;color:#64748b;font-size:13px">(optional)</span></h3>
+      <p class="card-sub">Tell them where exactly you'll drop them off — near their home, a bus stop, or a landmark.</p>
+      <textarea id="dropoffNote" placeholder="e.g. I'll drop you at the bus stop on High Street, 5 min walk from your house"></textarea>
+    </div>
+
+    <div id="confirmAlert" class="alert alert-err"></div>
+
+    <div id="confirmBtnRow" style="display:none;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-success" style="flex:1;padding:14px" onclick="confirmBooking()" id="confirmBtn">
+        ✅ Confirm — Add to Ride
+      </button>
+      <button class="btn btn-outline" onclick="goToStep2()">← Back</button>
+    </div>
+  </div>
+
+  <!-- ── SUCCESS ── -->
+  <div id="stepSuccess" style="display:none">
+    <div class="card">
+      <div class="success-box">
+        <div class="icon">🎉</div>
+        <h2>Ride Confirmed!</h2>
+        <p id="successMsg">They've been added to your ride and will receive a notification on their phone.</p>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <a href="my-rides.html" class="btn btn-primary">View My Rides</a>
+          <button class="btn btn-outline" onclick="startOver()">Add Another Person</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBGMNgrZc-4zw8mijC68m9oFn5BPFXEleY&libraries=places&callback=initMap" async defer></script>
+
+<script>
+const token = localStorage.getItem("token")
+if (!token) { sessionStorage.setItem("redirectAfterLogin", location.href); window.location.href = "login.html" }
+
+const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + token }
+
+let foundPerson = null
+let selectedRideId = null
+let driverPickupLat = null, driverPickupLng = null
+let driverDestLat = null, driverDestLng = null
+let map, directionsService, directionsRenderer
+let matchData = null
+
+// ── Map init ──────────────────────────────────────────────
+function initMap() {
+  map = new google.maps.Map(document.getElementById("routeMap"), {
+    center: { lat: 52.4862, lng: -1.8904 }, zoom: 10,
+    styles: [
+      { elementType: "geometry", stylers: [{ color: "#1e293b" }] },
+      { elementType: "labels.text.fill", stylers: [{ color: "#94a3b8" }] },
+      { featureType: "road", elementType: "geometry", stylers: [{ color: "#334155" }] },
+      { featureType: "water", elementType: "geometry", stylers: [{ color: "#0f172a" }] }
+    ]
+  })
+  directionsService = new google.maps.DirectionsService()
+  directionsRenderer = new google.maps.DirectionsRenderer({ suppressMarkers: false })
+  directionsRenderer.setMap(map)
+
+  const pickupAuto = new google.maps.places.Autocomplete(document.getElementById("driverPickup"))
+  const destAuto = new google.maps.places.Autocomplete(document.getElementById("driverDest"))
+
+  pickupAuto.addListener("place_changed", () => {
+    const pl = pickupAuto.getPlace()
+    if (!pl.geometry) return
+    driverPickupLat = pl.geometry.location.lat()
+    driverPickupLng = pl.geometry.location.lng()
+    tryDrawRoute()
+  })
+  destAuto.addListener("place_changed", () => {
+    const pl = destAuto.getPlace()
+    if (!pl.geometry) return
+    driverDestLat = pl.geometry.location.lat()
+    driverDestLng = pl.geometry.location.lng()
+    tryDrawRoute()
+  })
+}
+
+function tryDrawRoute() {
+  if (!driverPickupLat || !driverDestLat) return
+  document.getElementById("routeMap").style.display = "block"
+  directionsService.route({
+    origin: { lat: driverPickupLat, lng: driverPickupLng },
+    destination: { lat: driverDestLat, lng: driverDestLng },
+    travelMode: "DRIVING"
+  }, (result, status) => {
+    if (status === "OK") directionsRenderer.setDirections(result)
+  })
+}
+
+// ── Step navigation ───────────────────────────────────────
+function setPills(active) {
+  ;["step1","step2","step3","stepSuccess"].forEach((id,i) => {
+    document.getElementById(id).style.display = "none"
+    const pill = document.getElementById("pill" + (i+1))
+    if (pill) pill.className = "step-pill" + (i+1 < active ? " done" : i+1 === active ? " active" : "")
+  })
+  document.getElementById(active < 4 ? "step" + active : "stepSuccess").style.display = "block"
+}
+
+function goToStep1() { setPills(1) }
+function goToStep2() {
+  if (!foundPerson) return
+  setPills(2)
+  showHomeStatus()
+}
+function goToStep3() {
+  setPills(3)
+  loadMyRides()
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id)
+  el.textContent = msg
+  el.className = "alert " + (type === "ok" ? "alert-ok" : "alert-err")
+  el.style.display = "block"
+  if (type === "ok") setTimeout(() => el.style.display = "none", 4000)
+}
+
+function showHomeStatus() {
+  const el = document.getElementById("homeStatus")
+  if (foundPerson.hasHomeLocation) {
+    el.innerHTML = `<div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:#34d399">
+      ✓ <strong>${foundPerson.firstName}</strong> has set their home location (${foundPerson.homeAddress || "saved"}) — we can check if your route passes near it.
+    </div>`
+  } else {
+    el.innerHTML = `<div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:10px;padding:12px 16px;font-size:13px;color:#fbbf24;line-height:1.6">
+      ⚠️ <strong>${foundPerson.firstName}</strong> hasn't set their home location yet. You can still check route compatibility manually, or ask them to add it in their Traami profile. We'll still check for nearby bus stops.
+    </div>`
+  }
+}
+
+// ── Step 1: Search person ─────────────────────────────────
+async function searchPerson() {
+  const q = document.getElementById("searchQuery").value.trim()
+  const btn = document.getElementById("searchBtn")
+  document.getElementById("searchAlert").style.display = "none"
+  document.getElementById("personResult").style.display = "none"
+  if (!q) { showAlert("searchAlert", "Enter a username or phone number", "err"); return }
+
+  btn.textContent = "Searching..."
+  btn.disabled = true
+
+  try {
+    const res = await fetch("/api/onboard/find-person?query=" + encodeURIComponent(q), { headers })
+    const data = await res.json()
+    btn.textContent = "Search"
+    btn.disabled = false
+
+    if (!res.ok) { showAlert("searchAlert", data.message || "Not found", "err"); return }
+
+    foundPerson = data
+    renderPersonCard(data)
+    document.getElementById("personResult").style.display = "block"
+  } catch (e) {
+    btn.textContent = "Search"
+    btn.disabled = false
+    showAlert("searchAlert", "Connection error. Please try again.", "err")
+  }
+}
+
+function renderPersonCard(p) {
+  const initials = (p.firstName[0] + p.lastName[0]).toUpperCase()
+  const schedBadge = { rota: "Rota / Shift", fixed: "Fixed schedule", flexible: "Flexible" }[p.scheduleType] || ""
+  document.getElementById("personCard").innerHTML = `
+    <div class="person-avatar">${initials}</div>
+    <div class="person-info">
+      <h4>${p.firstName} ${p.lastName} <span style="color:#64748b;font-weight:400;font-size:14px">@${p.username}</span></h4>
+      <p>${p.company || ""} ${p.workLocation ? "· " + p.workLocation : ""}</p>
+      <span class="person-badge">${schedBadge}</span>
+      ${p.hasHomeLocation ? '<span class="person-badge green" style="margin-left:6px">📍 Home location set</span>' : '<span class="person-badge amber" style="margin-left:6px">⚠️ No home location</span>'}
+    </div>`
+}
+
+function resetSearch() {
+  foundPerson = null
+  document.getElementById("personResult").style.display = "none"
+  document.getElementById("searchQuery").value = ""
+  document.getElementById("searchAlert").style.display = "none"
+}
+
+// ── Step 2: Check route ───────────────────────────────────
+async function checkRoute() {
+  if (!driverPickupLat || !driverDestLat) {
+    showAlert("routeAlert", "Please select your pickup and destination from the Google suggestions", "err")
+    return
+  }
+
+  const btn = document.getElementById("checkBtn")
+  btn.textContent = "Checking..."
+  btn.disabled = true
+  document.getElementById("routeResult").style.display = "none"
+  document.getElementById("proceedBtn").style.display = "none"
+
+  try {
+    const body = {
+      personId: foundPerson.id,
+      driverPickupLat, driverPickupLng,
+      driverDestLat, driverDestLng,
+      personHomeLat: foundPerson.homeLat,
+      personHomeLng: foundPerson.homeLng
+    }
+    const res = await fetch("/api/onboard/check-route", { method: "POST", headers, body: JSON.stringify(body) })
+    const data = await res.json()
+    btn.textContent = "Check Route Match"
+    btn.disabled = false
+
+    if (!res.ok) { showAlert("routeAlert", data.message || "Error checking route", "err"); return }
+
+    matchData = data
+    renderRouteResult(data)
+    document.getElementById("routeResult").style.display = "block"
+    if (data.recommendation !== "no_match") {
+      document.getElementById("proceedBtn").style.display = "block"
+    }
+  } catch (e) {
+    btn.textContent = "Check Route Match"
+    btn.disabled = false
+    showAlert("routeAlert", "Connection error", "err")
+  }
+}
+
+function renderRouteResult(d) {
+  const cls = { great_match: "match-great", good_match: "match-good", possible: "match-possible", no_match: "match-none" }[d.recommendation] || "match-none"
+  const icon = { great_match: "🎯", good_match: "✅", possible: "🚌", no_match: "❌" }[d.recommendation] || "❓"
+
+  let statsHtml = ""
+  if (d.hasOwnProperty("closestDistMetres")) {
+    statsHtml = `
+      <div class="match-stats">
+        <div class="stat-chip"><span class="val">${d.closestDistMiles} mi</span><span class="lbl">Route distance</span></div>
+        <div class="stat-chip"><span class="val">${d.walkingMinsFromRoute} min</span><span class="lbl">Walk from route</span></div>
+        ${d.busStops && d.busStops.length ? `<div class="stat-chip"><span class="val">${d.busStops.length}</span><span class="lbl">Bus stops nearby</span></div>` : ""}
+      </div>`
+  }
+
+  let busHtml = ""
+  if (d.busStops && d.busStops.length > 0) {
+    const stops = d.busStops.map(s => `
+      <div class="bus-stop">
+        <div>
+          <div class="name">🚌 ${s.name}</div>
+          <div class="dist">${s.distFromHome}m from their home · ${Math.round(s.distFromHome/80)} min walk</div>
+          ${s.driverPassesNear ? `<div style="font-size:12px;color:#34d399;margin-top:4px">✓ Your route passes ${Math.round(s.driverDistFromStop)}m from this stop</div>` : ""}
+        </div>
+        ${s.driverPassesNear ? '<span class="bus-pass">Driver passes near</span>' : '<span class="bus-miss">May need detour</span>'}
+      </div>`).join("")
+    busHtml = `<div class="bus-section"><h5>🚌 Nearby Bus Stops</h5>${stops}</div>`
+  }
+
+  let busRecHtml = ""
+  if (d.busRecommendation) {
+    busRecHtml = `<div style="margin-top:12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:8px;padding:12px;font-size:13px;color:#34d399;line-height:1.6">
+      💡 <strong>Suggestion:</strong> ${d.busRecommendation}
+    </div>`
+  }
+
+  document.getElementById("routeResult").innerHTML = `
+    <div class="card ${cls}" style="background:transparent">
+      <div class="match-icon">${icon}</div>
+      <div class="match-title">${{ great_match: "Great Match!", good_match: "Good Match", possible: "Possible — Check Bus Options", no_match: "Route Doesn't Match" }[d.recommendation]}</div>
+      <div class="match-msg">${d.message}</div>
+      ${statsHtml}
+      ${busRecHtml}
+      ${busHtml}
+    </div>`
+}
+
+// ── Step 3: Load my rides & confirm ──────────────────────
+async function loadMyRides() {
+  const res = await fetch("/api/rides/my-rides", { headers })
+  const rides = await res.json()
+  const el = document.getElementById("myRidesList")
+
+  if (!rides.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:#64748b;font-size:14px">
+      You have no upcoming rides. <a href="create-ride.html" style="color:#818cf8">Create one first →</a>
+    </div>`
+    return
+  }
+
+  el.innerHTML = rides.map(r => `
+    <div class="ride-option" id="ride-${r._id}" onclick="selectRide('${r._id}')">
+      <div>
+        <div class="ride-route">${r.pickup} → ${r.destination}</div>
+        <div class="ride-meta-sm">📅 ${r.date || "—"} · 💺 ${r.seatsAvailable} seats left · £${r.totalRidePrice ? r.totalRidePrice.toFixed(2) : "—"}</div>
+      </div>
+      <div style="color:#4f46e5;font-size:18px" id="tick-${r._id}"></div>
+    </div>`).join("")
+}
+
+function selectRide(id) {
+  document.querySelectorAll(".ride-option").forEach(el => {
+    el.classList.remove("selected")
+    el.querySelector("[id^='tick-']").textContent = ""
+  })
+  document.getElementById("ride-" + id).classList.add("selected")
+  document.getElementById("tick-" + id).textContent = "✓"
+  selectedRideId = id
+  document.getElementById("dropoffCard").style.display = "block"
+  document.getElementById("confirmBtnRow").style.display = "flex"
+}
+
+async function confirmBooking() {
+  if (!selectedRideId) { showAlert("confirmAlert", "Please select a ride", "err"); return }
+  const btn = document.getElementById("confirmBtn")
+  btn.textContent = "Confirming..."
+  btn.disabled = true
+
+  const body = {
+    rideId: selectedRideId,
+    passengerId: foundPerson.id,
+    dropoffNote: document.getElementById("dropoffNote").value.trim()
+  }
+
+  try {
+    const res = await fetch("/api/onboard/confirm-booking", { method: "POST", headers, body: JSON.stringify(body) })
+    const data = await res.json()
+    btn.textContent = "Confirm — Add to Ride"
+    btn.disabled = false
+
+    if (!res.ok) { showAlert("confirmAlert", data.message || data.error, "err"); return }
+
+    document.getElementById("successMsg").textContent =
+      `${foundPerson.firstName} ${foundPerson.lastName} has been added to your ride. They'll get a notification straight away.`
+    setPills(4)
+  } catch (e) {
+    btn.textContent = "Confirm — Add to Ride"
+    btn.disabled = false
+    showAlert("confirmAlert", "Connection error", "err")
+  }
+}
+
+function startOver() {
+  foundPerson = null
+  selectedRideId = null
+  matchData = null
+  driverPickupLat = driverPickupLng = driverDestLat = driverDestLng = null
+  document.getElementById("searchQuery").value = ""
+  document.getElementById("driverPickup").value = ""
+  document.getElementById("driverDest").value = ""
+  document.getElementById("dropoffNote").value = ""
+  document.getElementById("routeMap").style.display = "none"
+  document.getElementById("personResult").style.display = "none"
+  document.getElementById("routeResult").style.display = "none"
+  document.getElementById("proceedBtn").style.display = "none"
+  document.getElementById("homeStatus").innerHTML = ""
+  document.querySelectorAll(".alert").forEach(a => a.style.display = "none")
+  setPills(1)
+}
+
+// Start on step 1
+goToStep1()
+</script>
+</body>
+</html>
