@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Traami – Payment Successful</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:44px 40px;width:100%;max-width:440px;text-align:center}
+.logo-wrap{margin-bottom:20px}
+.icon{font-size:64px;margin-bottom:16px}
+.badge{display:inline-block;background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;margin-bottom:16px}
+h2{font-size:22px;font-weight:800;margin-bottom:10px}
+.desc{color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:24px}
+.detail-box{background:#0f172a;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left}
+.detail-row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0;border-bottom:1px solid #1e293b}
+.detail-row:last-child{border-bottom:none;font-weight:700;font-size:15px;padding-top:10px}
+.detail-row .lbl{color:#64748b}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;padding:13px 28px;font-size:15px;font-weight:700;display:inline-block;margin-bottom:10px}
+.link{font-size:13px;color:#64748b}
+.link a{color:#818cf8;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-wrap"><img src="logo.png" alt="Traami" style="height:40px;"></div>
+  <div class="icon">✅</div>
+  <div class="badge">Payment Successful</div>
+  <h2>Your ride is booked!</h2>
+  <p class="desc">Your payment was processed successfully. Your seat is confirmed — check My Rides for the full details.</p>
+
+  <div class="detail-box" id="paymentDetails">
+    <div class="detail-row"><span class="lbl">Amount paid</span><span id="payAmount">—</span></div>
+    <div class="detail-row"><span class="lbl">Ride</span><span id="payRide">—</span></div>
+    <div class="detail-row"><span class="lbl">Reference</span><span id="payRef">—</span></div>
+  </div>
+
+  <a href="my-rides.html" class="btn">View My Rides</a>
+  <div class="link"><a href="rides.html">Find more rides →</a></div>
+</div>
+<script>
+const params = new URLSearchParams(window.location.search)
+document.getElementById("payAmount").textContent = params.get("amount") ? "£" + params.get("amount") : "—"
+document.getElementById("payRide").textContent = params.get("ride") || "—"
+document.getElementById("payRef").textContent = params.get("ref") || "—"
+</script>
+</body>
+</html>

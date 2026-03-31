@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="logo.png">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Traami – Dashboard</title>
 <style>
@@ -34,7 +36,7 @@ input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px 
 </head>
 <body>
 <div class="topbar">
-  <a href="index.html" class="logo">⚡ Traami</a>
+  <a href="index.html" class="logo"><img src="logo.png" alt="Traami" style="height:36px;vertical-align:middle;"></a>
   <div>
     <a href="rides.html">Find Rides</a>
     <a href="my-rides.html">My Rides</a>
@@ -58,6 +60,7 @@ input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px 
     <a href="profile.html" class="action-card"><div class="icon">👤</div><div class="label">My Profile</div></a>
     <div class="action-card" onclick="findMatches()"><div class="icon">🤝</div><div class="label">Find Matches</div></div>
     <a href="manual-onboard.html" class="action-card"><div class="icon">➕</div><div class="label">Quick Match</div></a>
+    <a href="payment.html" class="action-card"><div class="icon">💳</div><div class="label">Payment</div></a>
     <a href="admin.html" class="action-card" id="adminLink" style="display:none"><div class="icon">⚙️</div><div class="label">Admin Panel</div></a>
   </div>
 

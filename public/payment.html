@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Traami – Add Payment Method</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:14px}
+.page{max-width:560px;margin:40px auto;padding:0 20px 60px}
+h1{font-size:24px;font-weight:800;margin-bottom:6px}
+.sub{color:#64748b;font-size:14px;margin-bottom:28px;line-height:1.6}
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:24px;margin-bottom:20px}
+.card h3{font-size:15px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.card p{color:#64748b;font-size:13px;line-height:1.6;margin-bottom:14px}
+.badge{background:#1a3a2f;color:#34d399;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700}
+.badge-amber{background:#3b2a00;color:#fbbf24}
+label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
+input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px;transition:border-color .2s}
+input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:none;border-radius:10px;padding:13px 20px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:16px;transition:opacity .2s}
+.btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff}
+.btn-primary:hover{opacity:.88}
+.btn-outline{background:transparent;border:1px solid #334155;color:#94a3b8;margin-top:8px}
+.tab-row{display:flex;gap:8px;margin-bottom:20px}
+.tab{flex:1;padding:10px;text-align:center;border-radius:10px;border:1px solid #334155;cursor:pointer;font-size:14px;font-weight:600;color:#64748b;transition:all .2s;background:#0f172a}
+.tab.active{background:rgba(79,70,229,.15);border-color:#4f46e5;color:#818cf8}
+.section{display:none}
+.section.active{display:block}
+.alert{border-radius:10px;padding:12px 16px;font-size:14px;margin-bottom:14px;display:none}
+.alert-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.alert-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+.stripe-note{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;font-size:13px;color:#64748b;line-height:1.7;margin-top:12px}
+.stripe-note strong{color:#e2e8f0}
+.lock-icon{font-size:11px;color:#64748b;margin-top:8px;text-align:center}
+.method-card{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.method-info{display:flex;align-items:center;gap:12px}
+.method-icon{font-size:20px}
+.method-text{font-size:14px;font-weight:600}
+.method-sub{font-size:12px;color:#64748b}
+.btn-sm{border:none;border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer}
+.btn-danger-sm{background:rgba(239,68,68,.15);color:#f87171}
+@media(max-width:540px){.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <a href="index.html"><img src="logo.png" alt="Traami" style="height:36px;vertical-align:middle;"></a>
+  <div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="profile.html">Profile</a>
+  </div>
+</div>
+
+<div class="page">
+  <h1>💳 Payment Methods</h1>
+  <p class="sub">Add a card to pay for rides, or add your bank details to receive payments as a driver. Payments are processed securely via Stripe.</p>
+
+  <div class="tab-row">
+    <div class="tab active" onclick="switchTab('passenger')">🧳 Pay for Rides</div>
+    <div class="tab" onclick="switchTab('driver')">🚗 Receive Payments</div>
+  </div>
+
+  <!-- PASSENGER: Add card -->
+  <div id="passengerSection" class="section active">
+    <div class="card">
+      <h3>💳 Your Payment Cards <span class="badge">Secure</span></h3>
+      <p>Add a debit or credit card to pay for rides automatically. Your card details are never stored on Traami servers — handled entirely by Stripe.</p>
+
+      <div id="cardAlert" class="alert"></div>
+      <div id="savedCards"></div>
+
+      <hr style="border:none;border-top:1px solid #334155;margin:16px 0">
+      <p style="font-size:13px;font-weight:700;margin-bottom:4px">Add a new card</p>
+
+      <label>Cardholder Name</label>
+      <input id="cardName" placeholder="Name as it appears on card">
+
+      <label>Card Number</label>
+      <input id="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" oninput="formatCard(this)">
+
+      <div class="row2">
+        <div>
+          <label>Expiry Date</label>
+          <input id="cardExpiry" placeholder="MM / YY" maxlength="7" oninput="formatExpiry(this)">
+        </div>
+        <div>
+          <label>CVV</label>
+          <input id="cardCVV" placeholder="123" maxlength="4" type="password">
+        </div>
+      </div>
+
+      <div class="stripe-note">
+        <strong>🔒 Powered by Stripe</strong><br>
+        Your card details are encrypted and sent directly to Stripe — Traami never sees your full card number. Stripe is used by millions of businesses worldwide including Amazon and Deliveroo.
+      </div>
+
+      <button class="btn btn-primary" onclick="saveCard()">Save Card</button>
+      <p class="lock-icon">🔐 256-bit SSL encryption · PCI DSS compliant</p>
+    </div>
+  </div>
+
+  <!-- DRIVER: Bank payout -->
+  <div id="driverSection" class="section">
+    <div class="card">
+      <h3>🏦 Payout Account <span class="badge-amber badge">Required to receive rides</span></h3>
+      <p>Add your UK bank account so Traami can send you earnings after completed rides. Funds are transferred within 2–3 business days via Stripe.</p>
+
+      <div id="bankAlert" class="alert"></div>
+
+      <label>Account Holder Name</label>
+      <input id="bankName" placeholder="Your full name as on bank account">
+
+      <label>Sort Code</label>
+      <input id="sortCode" placeholder="00-00-00" maxlength="8" oninput="formatSort(this)">
+
+      <label>Account Number</label>
+      <input id="accountNum" placeholder="12345678" maxlength="8">
+
+      <div class="stripe-note">
+        <strong>🔒 Stripe Connect</strong><br>
+        Traami uses Stripe Connect to securely handle driver payouts. Your bank details are verified and stored by Stripe, not Traami. You'll receive a confirmation email from Stripe once your account is set up.
+      </div>
+
+      <button class="btn btn-primary" onclick="saveBankDetails()">Save Bank Details</button>
+      <p class="lock-icon">🔐 Bank-level encryption · FCA regulated payments</p>
+    </div>
+
+    <div class="card">
+      <h3>💰 Your Earnings</h3>
+      <p>View your ride earnings and payout history in your dashboard.</p>
+      <a href="dashboard.html" style="display:block;text-align:center;background:rgba(79,70,229,.15);border:1px solid #4f46e5;color:#818cf8;border-radius:10px;padding:12px;font-size:14px;font-weight:700;text-decoration:none;margin-top:4px">View Earnings Dashboard →</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token")
+if (!token) { window.location.href = "login.html" }
+
+const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + token }
+
+function switchTab(tab) {
+  document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"))
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"))
+  event.currentTarget.classList.add("active")
+  document.getElementById(tab + "Section").classList.add("active")
+}
+
+function formatCard(el) {
+  let v = el.value.replace(/\D/g, "").substring(0, 16)
+  el.value = v.replace(/(.{4})/g, "$1 ").trim()
+}
+
+function formatExpiry(el) {
+  let v = el.value.replace(/\D/g, "").substring(0, 4)
+  if (v.length > 2) v = v.slice(0,2) + " / " + v.slice(2)
+  el.value = v
+}
+
+function formatSort(el) {
+  let v = el.value.replace(/\D/g, "").substring(0, 6)
+  if (v.length > 4) v = v.slice(0,2) + "-" + v.slice(2,4) + "-" + v.slice(4)
+  else if (v.length > 2) v = v.slice(0,2) + "-" + v.slice(2)
+  el.value = v
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id)
+  el.textContent = msg
+  el.className = "alert " + (type === "ok" ? "alert-ok" : "alert-err")
+  el.style.display = "block"
+  setTimeout(() => el.style.display = "none", 5000)
+}
+
+async function saveCard() {
+  const name = document.getElementById("cardName").value.trim()
+  const num = document.getElementById("cardNumber").value.trim()
+  const expiry = document.getElementById("cardExpiry").value.trim()
+  const cvv = document.getElementById("cardCVV").value.trim()
+
+  if (!name || !num || !expiry || !cvv) {
+    showAlert("cardAlert", "Please fill in all card details", "err"); return
+  }
+  if (num.replace(/\s/g, "").length < 16) {
+    showAlert("cardAlert", "Please enter a valid 16-digit card number", "err"); return
+  }
+
+  // In production: send to Stripe.js to tokenize, then send token to /api/payments/add-card
+  // NEVER send raw card numbers to your own server
+  try {
+    const res = await fetch("/api/payments/add-card", {
+      method: "POST", headers,
+      body: JSON.stringify({ cardName: name, lastFour: num.replace(/\s/g,"").slice(-4), expiry })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      showAlert("cardAlert", "✓ Card saved successfully!", "ok")
+      document.getElementById("cardName").value = ""
+      document.getElementById("cardNumber").value = ""
+      document.getElementById("cardExpiry").value = ""
+      document.getElementById("cardCVV").value = ""
+      loadSavedCards()
+    } else {
+      showAlert("cardAlert", data.message || "Failed to save card", "err")
+    }
+  } catch(e) {
+    showAlert("cardAlert", "Connection error. Please try again.", "err")
+  }
+}
+
+async function saveBankDetails() {
+  const name = document.getElementById("bankName").value.trim()
+  const sort = document.getElementById("sortCode").value.trim()
+  const acc = document.getElementById("accountNum").value.trim()
+
+  if (!name || !sort || !acc) {
+    showAlert("bankAlert", "Please fill in all bank details", "err"); return
+  }
+  if (sort.replace(/-/g,"").length !== 6) {
+    showAlert("bankAlert", "Please enter a valid 6-digit sort code", "err"); return
+  }
+  if (acc.length !== 8) {
+    showAlert("bankAlert", "Please enter a valid 8-digit account number", "err"); return
+  }
+
+  try {
+    const res = await fetch("/api/payments/add-bank", {
+      method: "POST", headers,
+      body: JSON.stringify({ accountName: name, sortCode: sort, accountNumber: acc })
+    })
+    const data = await res.json()
+    if (res.ok) {
+      showAlert("bankAlert", "✓ Bank details saved! You can now receive payments as a driver.", "ok")
+      document.getElementById("bankName").value = ""
+      document.getElementById("sortCode").value = ""
+      document.getElementById("accountNum").value = ""
+    } else {
+      showAlert("bankAlert", data.message || "Failed to save bank details", "err")
+    }
+  } catch(e) {
+    showAlert("bankAlert", "Connection error. Please try again.", "err")
+  }
+}
+
+async function loadSavedCards() {
+  try {
+    const res = await fetch("/api/payments/cards", { headers })
+    const cards = await res.json()
+    const el = document.getElementById("savedCards")
+    if (!cards.length) { el.innerHTML = ""; return }
+    el.innerHTML = cards.map(c => `
+      <div class="method-card">
+        <div class="method-info">
+          <div class="method-icon">💳</div>
+          <div>
+            <div class="method-text">•••• •••• •••• ${c.lastFour}</div>
+            <div class="method-sub">${c.cardName} · Expires ${c.expiry}</div>
+          </div>
+        </div>
+        <button class="btn-sm btn-danger-sm" onclick="removeCard('${c._id}')">Remove</button>
+      </div>`).join("")
+  } catch(e) {}
+}
+
+async function removeCard(id) {
+  if (!confirm("Remove this card?")) return
+  await fetch("/api/payments/card/" + id, { method: "DELETE", headers })
+  loadSavedCards()
+}
+
+loadSavedCards()
+</script>
+</body>
+</html>

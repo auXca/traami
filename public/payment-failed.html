@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Traami – Payment Failed</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:44px 40px;width:100%;max-width:440px;text-align:center}
+.logo-wrap{margin-bottom:20px}
+.icon{font-size:64px;margin-bottom:16px}
+.badge{display:inline-block;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:20px;padding:6px 16px;font-size:13px;font-weight:600;margin-bottom:16px}
+h2{font-size:22px;font-weight:800;margin-bottom:10px}
+.desc{color:#94a3b8;font-size:15px;line-height:1.7;margin-bottom:24px}
+.reason-box{background:#0f172a;border:1px solid rgba(239,68,68,.2);border-radius:10px;padding:14px;margin-bottom:20px;font-size:14px;color:#f87171;text-align:left}
+.help{background:#1e293b;border-radius:12px;padding:16px;margin-bottom:20px;text-align:left}
+.help p{font-size:13px;color:#64748b;line-height:2;margin:0}
+.help strong{color:#e2e8f0}
+.btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;text-decoration:none;border-radius:10px;padding:13px 28px;font-size:15px;font-weight:700;display:inline-block;margin-bottom:10px}
+.link{font-size:13px;color:#64748b}
+.link a{color:#818cf8;text-decoration:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo-wrap"><img src="logo.png" alt="Traami" style="height:40px;"></div>
+  <div class="icon">❌</div>
+  <div class="badge">Payment Failed</div>
+  <h2>Something went wrong</h2>
+  <p class="desc">Your payment could not be processed. Your seat has not been booked and you have not been charged.</p>
+
+  <div class="reason-box" id="reasonBox" style="display:none">
+    <strong>Reason:</strong> <span id="reason"></span>
+  </div>
+
+  <div class="help">
+    <p>
+      <strong>Common reasons for failure:</strong><br>
+      · Insufficient funds on the card<br>
+      · Card details entered incorrectly<br>
+      · Card blocked for online payments<br>
+      · Bank declined the transaction
+    </p>
+  </div>
+
+  <a href="payment.html" class="btn">Update Payment Method</a><br>
+  <a href="rides.html" style="display:inline-block;margin-top:8px;font-size:14px;color:#64748b;text-decoration:none">← Back to rides</a>
+  <div class="link" style="margin-top:12px">Need help? <a href="mailto:support@traami.co.uk">support@traami.co.uk</a></div>
+</div>
+<script>
+const params = new URLSearchParams(window.location.search)
+const reason = params.get("reason")
+if (reason) {
+  document.getElementById("reason").textContent = decodeURIComponent(reason)
+  document.getElementById("reasonBox").style.display = "block"
+}
+</script>
+</body>
+</html>
