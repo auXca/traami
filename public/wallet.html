@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<title>Traami – My Wallet</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh}
+.topbar{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.topbar a{color:rgba(255,255,255,.85);text-decoration:none;font-size:14px;margin-left:14px}
+.page{max-width:680px;margin:32px auto;padding:0 20px 60px}
+
+/* Balance cards */
+.balance-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:24px}
+.balance-card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:20px}
+.balance-card.primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);border:none}
+.balance-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:rgba(255,255,255,.7);margin-bottom:6px}
+.balance-card:not(.primary) .balance-label{color:#64748b}
+.balance-amount{font-size:32px;font-weight:900;color:#fff}
+.balance-card:not(.primary) .balance-amount{color:#e2e8f0}
+.balance-sub{font-size:12px;color:rgba(255,255,255,.6);margin-top:4px}
+.balance-card:not(.primary) .balance-sub{color:#475569}
+
+/* Section */
+.section{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:22px;margin-bottom:20px}
+.section h3{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.section-sub{color:#64748b;font-size:13px;margin-bottom:16px;line-height:1.6}
+
+/* Withdraw form */
+label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;margin-top:14px;text-transform:uppercase;letter-spacing:.5px}
+input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px;transition:border-color .2s}
+input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{border:none;border-radius:10px;padding:12px 20px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.88}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-primary{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;width:100%;margin-top:14px}
+.btn-success{background:linear-gradient(135deg,#059669,#10b981);color:#fff;width:100%;margin-top:14px}
+
+/* Transaction list */
+.tx-list{max-height:400px;overflow-y:auto}
+.tx-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1e293b;gap:12px}
+.tx-item:last-child{border-bottom:none}
+.tx-icon{font-size:20px;flex-shrink:0}
+.tx-info{flex:1}
+.tx-desc{font-size:14px;font-weight:600}
+.tx-date{font-size:12px;color:#475569;margin-top:2px}
+.tx-status{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600;margin-top:3px;display:inline-block}
+.status-completed{background:#1a3a2f;color:#34d399}
+.status-pending{background:#3b2a00;color:#fbbf24}
+.status-rejected{background:#3b1a1a;color:#f87171}
+.tx-amount{font-size:16px;font-weight:800;white-space:nowrap}
+.tx-amount.earning{color:#34d399}
+.tx-amount.debit{color:#f87171}
+.tx-amount.neutral{color:#64748b}
+
+/* Alert */
+.alert{border-radius:10px;padding:12px 16px;font-size:14px;margin-bottom:14px;display:none}
+.alert-ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399}
+.alert-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171}
+
+/* Payment info box */
+.pay-info{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:14px;font-size:13px;color:#64748b;line-height:1.8}
+.pay-info strong{color:#e2e8f0}
+.pay-info a{color:#818cf8;text-decoration:none}
+.empty{text-align:center;padding:32px;color:#475569;font-size:14px}
+
+@media(max-width:480px){.balance-grid{grid-template-columns:1fr}.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html"><img src="logo.png" alt="Traami" style="height:36px;vertical-align:middle;"></a>
+  <div>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="my-rides.html">My Rides</a>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</div>
+
+<div class="page">
+
+  <!-- Balance cards -->
+  <div class="balance-grid">
+    <div class="balance-card primary">
+      <div class="balance-label">Available Balance</div>
+      <div class="balance-amount" id="balance">£—</div>
+      <div class="balance-sub">Ready to withdraw</div>
+    </div>
+    <div class="balance-card">
+      <div class="balance-label">Pending</div>
+      <div class="balance-amount" id="pending">£—</div>
+      <div class="balance-sub">Withdrawal in progress</div>
+    </div>
+    <div class="balance-card">
+      <div class="balance-label">Total Earned</div>
+      <div class="balance-amount" id="totalEarned">£—</div>
+      <div class="balance-sub">All time</div>
+    </div>
+    <div class="balance-card">
+      <div class="balance-label">Total Withdrawn</div>
+      <div class="balance-amount" id="totalWithdrawn">£—</div>
+      <div class="balance-sub">All time paid out</div>
+    </div>
+  </div>
+
+  <!-- How payment works -->
+  <div class="section">
+    <h3>💷 How You Get Paid</h3>
+    <div class="pay-info">
+      <strong>1. Passenger pays Traami</strong> — After your ride is approved, the passenger sends payment to Traami's Revolut or Monzo.<br>
+      <strong>2. Traami credits your wallet</strong> — 90% of the ride fare is added to your balance automatically when you mark the ride complete.<br>
+      <strong>3. You withdraw anytime</strong> — Request a withdrawal below. We'll send it to your Revolut, Monzo or bank account within 24 hours.<br><br>
+      <strong>Traami keeps:</strong> 10% platform fee &nbsp;|&nbsp; <strong>You keep:</strong> 90% of every ride
+    </div>
+  </div>
+
+  <!-- Mark ride complete -->
+  <div class="section">
+    <h3>✅ Mark a Ride Complete</h3>
+    <p class="section-sub">Once you've completed a ride, mark it here to get your earnings credited to your wallet. Only mark it complete after the passenger has been dropped off.</p>
+
+    <label>Select Ride</label>
+    <select id="rideSelect">
+      <option value="">Loading your rides...</option>
+    </select>
+
+    <div id="completeAlert" class="alert"></div>
+    <button class="btn btn-success" onclick="completeRide()" id="completeBtn">✓ Mark Ride Complete & Claim Earnings</button>
+  </div>
+
+  <!-- Withdraw -->
+  <div class="section">
+    <h3>💸 Request Withdrawal</h3>
+    <p class="section-sub">Enter the amount you want to withdraw and how you'd like to receive it. We'll process it within 24 hours.</p>
+
+    <div id="withdrawAlert" class="alert"></div>
+
+    <label>Amount to Withdraw</label>
+    <input id="withdrawAmount" type="number" min="1" step="0.01" placeholder="e.g. 15.50">
+
+    <div class="row2">
+      <div>
+        <label>Payment Method</label>
+        <select id="withdrawMethod">
+          <option value="revolut">Revolut</option>
+          <option value="monzo">Monzo</option>
+          <option value="bank_transfer">Bank Transfer</option>
+          <option value="cash">Cash</option>
+        </select>
+      </div>
+      <div>
+        <label>Your Username / Reference</label>
+        <input id="withdrawRef" placeholder="@yourusername or account ref">
+      </div>
+    </div>
+
+    <button class="btn btn-primary" onclick="requestWithdrawal()" id="withdrawBtn">Request Withdrawal</button>
+  </div>
+
+  <!-- Transaction history -->
+  <div class="section">
+    <h3>📋 Transaction History</h3>
+    <div class="tx-list" id="txList">
+      <div class="empty">Loading transactions...</div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+const token  = localStorage.getItem("token")
+const userId = localStorage.getItem("userId")
+if (!token) { window.location.href = "login.html" }
+
+const headers = { "Content-Type": "application/json", "Authorization": "Bearer " + token }
+
+// Socket: listen for real-time wallet updates
+const socket = io()
+socket.emit("registerUser", userId)
+socket.on("withdrawalPaid", d => {
+  showAlert("withdrawAlert", "🎉 " + d.message, "ok")
+  loadWallet()
+})
+socket.on("withdrawalRejected", d => {
+  showAlert("withdrawAlert", "⚠️ " + d.message, "err")
+  loadWallet()
+})
+socket.on("rideCompleted", d => {
+  showAlert("completeAlert", "✓ " + d.message, "ok")
+  loadWallet()
+  loadMyRides()
+})
+
+// ── Load wallet ──────────────────────────────────────────
+async function loadWallet() {
+  const res  = await fetch("/api/wallet/my-wallet", { headers })
+  const data = await res.json()
+
+  document.getElementById("balance").textContent       = "£" + data.balance
+  document.getElementById("pending").textContent       = "£" + data.pending
+  document.getElementById("totalEarned").textContent   = "£" + data.totalEarned
+  document.getElementById("totalWithdrawn").textContent= "£" + data.totalWithdrawn
+
+  const txList = document.getElementById("txList")
+  if (!data.transactions.length) {
+    txList.innerHTML = '<div class="empty">No transactions yet. Complete your first ride to see earnings here.</div>'
+    return
+  }
+
+  const typeConfig = {
+    driver_earning:     { icon: "💚", label: "Ride earning",       cls: "earning", sign: "+" },
+    commission:         { icon: "💜", label: "Platform fee",       cls: "neutral", sign: "-" },
+    ride_payment:       { icon: "💳", label: "Ride payment",       cls: "earning", sign: "+" },
+    withdrawal_request: { icon: "⏳", label: "Withdrawal request", cls: "debit",   sign: "-" },
+    withdrawal_paid:    { icon: "✅", label: "Withdrawal paid",    cls: "debit",   sign: "-" },
+    withdrawal_rejected:{ icon: "❌", label: "Withdrawal rejected",cls: "earning", sign: "+" }
+  }
+
+  txList.innerHTML = data.transactions.map(tx => {
+    const cfg = typeConfig[tx.type] || { icon: "💰", label: tx.type, cls: "neutral", sign: "" }
+    const d   = new Date(tx.date)
+    const dateStr = d.toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })
+    return `
+      <div class="tx-item">
+        <div class="tx-icon">${cfg.icon}</div>
+        <div class="tx-info">
+          <div class="tx-desc">${tx.description || cfg.label}</div>
+          <div class="tx-date">${dateStr}</div>
+          <span class="tx-status status-${tx.status}">${tx.status}</span>
+        </div>
+        <div class="tx-amount ${cfg.cls}">${cfg.sign}£${tx.amount}</div>
+      </div>`
+  }).join("")
+}
+
+// ── Load my active rides for completing ─────────────────
+async function loadMyRides() {
+  const res   = await fetch("/api/rides/my-rides", { headers })
+  const rides = await res.json()
+  const sel   = document.getElementById("rideSelect")
+  const active = rides.filter(r => !r.isCompleted)
+  if (!active.length) {
+    sel.innerHTML = '<option value="">No active rides to complete</option>'
+    return
+  }
+  sel.innerHTML = '<option value="">— Select a ride —</option>' +
+    active.map(r => `<option value="${r._id}">${r.pickup} → ${r.destination} | ${r.date||"Recurring"} | £${(r.totalRidePrice||0).toFixed(2)}/seat</option>`).join("")
+}
+
+// ── Mark ride complete ───────────────────────────────────
+async function completeRide() {
+  const rideId = document.getElementById("rideSelect").value
+  const btn    = document.getElementById("completeBtn")
+  if (!rideId) { showAlert("completeAlert", "Please select a ride", "err"); return }
+  btn.textContent = "Processing..."
+  btn.disabled = true
+  try {
+    const res  = await fetch("/api/wallet/complete-ride/" + rideId, { method: "POST", headers })
+    const data = await res.json()
+    btn.textContent = "✓ Mark Ride Complete & Claim Earnings"
+    btn.disabled = false
+    if (res.ok) {
+      showAlert("completeAlert", `✓ ${data.message} You earned ${data.earned} (Traami kept ${data.commission} commission).`, "ok")
+      loadWallet()
+      loadMyRides()
+    } else {
+      showAlert("completeAlert", data.message || data.error, "err")
+    }
+  } catch(e) {
+    btn.textContent = "✓ Mark Ride Complete & Claim Earnings"
+    btn.disabled = false
+    showAlert("completeAlert", "Connection error", "err")
+  }
+}
+
+// ── Request withdrawal ───────────────────────────────────
+async function requestWithdrawal() {
+  const amount = document.getElementById("withdrawAmount").value
+  const method = document.getElementById("withdrawMethod").value
+  const ref    = document.getElementById("withdrawRef").value.trim()
+  const btn    = document.getElementById("withdrawBtn")
+
+  if (!amount || parseFloat(amount) < 1) {
+    showAlert("withdrawAlert", "Please enter an amount of at least £1.00", "err"); return
+  }
+  btn.textContent = "Requesting..."
+  btn.disabled = true
+  try {
+    const res  = await fetch("/api/wallet/withdraw", {
+      method: "POST", headers,
+      body: JSON.stringify({ amount, method, ref })
+    })
+    const data = await res.json()
+    btn.textContent = "Request Withdrawal"
+    btn.disabled = false
+    if (res.ok) {
+      showAlert("withdrawAlert", "✓ " + data.message, "ok")
+      document.getElementById("withdrawAmount").value = ""
+      document.getElementById("withdrawRef").value = ""
+      loadWallet()
+    } else {
+      showAlert("withdrawAlert", data.message || data.error, "err")
+    }
+  } catch(e) {
+    btn.textContent = "Request Withdrawal"
+    btn.disabled = false
+    showAlert("withdrawAlert", "Connection error", "err")
+  }
+}
+
+function showAlert(id, msg, type) {
+  const el = document.getElementById(id)
+  el.textContent = msg
+  el.className = "alert " + (type === "ok" ? "alert-ok" : "alert-err")
+  el.style.display = "block"
+  if (type === "ok") setTimeout(() => el.style.display = "none", 8000)
+}
+
+function logout() { localStorage.clear(); window.location.href = "login.html" }
+
+loadWallet()
+loadMyRides()
+</script>
+</body>
+</html>

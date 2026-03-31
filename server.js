@@ -14,6 +14,7 @@ const scheduleRoutes = require("./routes/scheduleRoutes")
 const ratingRoutes = require("./routes/ratingRoutes")
 const onboardRoutes = require("./routes/onboardRoutes")
 const paymentRoutes = require("./routes/paymentRoutes")
+const walletRoutes  = require("./routes/walletRoutes")
 
 const app = express()
 const server = http.createServer(app)
@@ -36,6 +37,7 @@ app.use("/api/schedule", scheduleRoutes)
 app.use("/api/ratings", ratingRoutes)
 app.use("/api/onboard", onboardRoutes)
 app.use("/api/payments", paymentRoutes)
+app.use("/api/wallet",   walletRoutes)
 
 let activeDrivers = {}
 

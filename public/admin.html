@@ -60,6 +60,7 @@
     <a href="#" onclick="showSection('rides')">🚗 Rides</a>
     <a href="#" onclick="showSection('earnings')">💰 Earnings</a>
     <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
+    <a href="#" onclick="showSection('withdrawals')">💸 Withdrawals</a>
     <hr style="border-color:#2d3148; margin:16px 0;">
     <a href="#" onclick="adminLogout()" style="color:#ef4444;">🚪 Logout</a>
   </div>
@@ -259,7 +260,7 @@ function showDashboard() {
 }
 
 function showSection(name) {
-  ["overviewSection","usersSection","ridesSection","earningsSection","settingsSection"].forEach(id => {
+  ["overviewSection","usersSection","ridesSection","earningsSection","settingsSection","withdrawalsSection"].forEach(id => {
     document.getElementById(id).style.display = "none"
   })
   document.getElementById(name + "Section").style.display = "block"
@@ -267,6 +268,7 @@ function showSection(name) {
   if (name === "rides") loadRides()
   if (name === "earnings") loadEarnings()
   if (name === "settings") loadSettings()
+  if (name === "withdrawals") loadWithdrawals()
 }
 
 async function loadOverview() {
@@ -409,6 +411,80 @@ async function deleteRide(id) {
   loadRides()
 }
 
+
+
+async function loadWithdrawals() {
+  // Load earnings overview
+  try {
+    const res  = await fetch("/api/wallet/admin/earnings", { headers: authHeaders() })
+    const data = await res.json()
+    document.getElementById("totalComm").textContent    = "£" + data.totalCommission
+    document.getElementById("pendingCount").textContent = data.pendingWithdrawals
+    document.getElementById("pendingAmount").textContent= "£" + data.pendingAmount + " waiting"
+    document.getElementById("driverBal").textContent    = "£" + data.totalDriverBalance
+  } catch(e) {}
+
+  // Load pending withdrawals
+  try {
+    const res  = await fetch("/api/wallet/admin/withdrawals", { headers: authHeaders() })
+    const list = await res.json()
+    const el   = document.getElementById("withdrawalsList")
+    if (!list.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;font-size:14px">No pending withdrawals 🎉</div>'
+      return
+    }
+    el.innerHTML = list.map(w => `
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#e2e8f0">${w.user.firstName} ${w.user.lastName}</div>
+            <div style="font-size:13px;color:#64748b;margin-top:2px">@${w.user.username} · ${w.user.email}</div>
+            <div style="font-size:13px;color:#94a3b8;margin-top:4px">
+              Wants: <strong>£${w.amount}</strong> via <strong style="color:#818cf8">${w.method}</strong>
+              ${w.ref ? ' → <strong style="color:#34d399">' + w.ref + '</strong>' : ''}
+            </div>
+            <div style="font-size:11px;color:#475569;margin-top:4px">Requested: ${new Date(w.date).toLocaleString("en-GB")}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="payWithdrawal('${w.id}', '${w.user.firstName}', '${w.amount}')"
+              style="background:#059669;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">
+              ✓ Mark as Paid
+            </button>
+            <button onclick="rejectWithdrawal('${w.id}')"
+              style="background:rgba(239,68,68,.15);color:#f87171;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">
+              ✗ Reject
+            </button>
+          </div>
+        </div>
+      </div>`).join("")
+  } catch(e) {
+    document.getElementById("withdrawalsList").innerHTML = '<div style="color:#f87171;font-size:14px">Error loading withdrawals</div>'
+  }
+}
+
+async function payWithdrawal(id, name, amount) {
+  if (!confirm(`Confirm you have sent £${amount} to ${name}?`)) return
+  const note = prompt("Optional: add a reference/note (e.g. Revolut ref)") || ""
+  const res  = await fetch("/api/wallet/admin/withdrawals/" + id + "/pay", {
+    method: "PUT", headers: authHeaders(),
+    body: JSON.stringify({ note })
+  })
+  const data = await res.json()
+  alert(data.message)
+  loadWithdrawals()
+}
+
+async function rejectWithdrawal(id) {
+  const reason = prompt("Reason for rejection (the driver will see this):")
+  if (!reason) return
+  const res  = await fetch("/api/wallet/admin/withdrawals/" + id + "/reject", {
+    method: "PUT", headers: authHeaders(),
+    body: JSON.stringify({ reason })
+  })
+  const data = await res.json()
+  alert(data.message)
+  loadWithdrawals()
+}
 
 async function loadSettings() {
   const res = await fetch("/api/admin/settings", { headers: authHeaders() })

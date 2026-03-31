@@ -19,7 +19,9 @@ default:"pending"
 },
 
 dropoffNote:  { type: String },
-  manualBooking: { type: Boolean, default: false },
+  manualBooking:   { type: Boolean, default: false },
+  paymentStatus:   { type: String, enum: ["unpaid","paid","refunded"], default: "unpaid" },
+  paymentMethod:   { type: String },
 
 createdAt:{
 type:Date,
