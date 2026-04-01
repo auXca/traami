@@ -8,45 +8,60 @@
 <title>Traami – Create Account</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:40px;width:100%;max-width:480px}
-.logo{font-size:24px;font-weight:800;background:linear-gradient(135deg,#818cf8,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
-h2{font-size:20px;font-weight:700;margin-bottom:4px}
-.sub{color:#64748b;font-size:13px;margin-bottom:22px}
-.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.field{margin-bottom:14px}
+html,body{min-height:100vh}
+body{background:#0f172a;color:#e2e8f0;font-family:'Segoe UI',sans-serif;display:flex;align-items:flex-start;justify-content:center;padding:16px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:20px;padding:28px 24px;width:100%;max-width:480px;margin:auto}
+.logo-wrap{text-align:center;margin-bottom:18px}
+.logo-wrap img{height:44px}
+h2{font-size:20px;font-weight:700;margin-bottom:4px;text-align:center}
+.sub{color:#94a3b8;font-size:13px;margin-bottom:20px;text-align:center}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{margin-bottom:12px}
 label{font-size:11px;color:#94a3b8;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
-input,select{background:#0f172a;border:1px solid #334155;color:#e2e8f0;border-radius:10px;padding:11px 14px;width:100%;font-size:14px;transition:border-color .2s}
+input,select{
+  background:#0f172a;
+  border:1px solid #475569;
+  color:#e2e8f0;
+  border-radius:10px;
+  padding:11px 14px;
+  width:100%;
+  font-size:14px;
+  transition:border-color .2s;
+}
+input::placeholder{color:#94a3b8}
 input:focus,select:focus{border-color:#4f46e5;outline:none;box-shadow:0 0 0 3px rgba(79,70,229,.2)}
-select option{background:#1e293b}
+select{color:#e2e8f0}
+select option{background:#1e293b;color:#e2e8f0}
 .username-wrap{position:relative}
 .username-wrap input{padding-right:36px}
 .username-status{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:16px;display:none}
-.hint{font-size:11px;color:#475569;margin-top:4px}
+.hint{font-size:11px;color:#94a3b8;margin-top:4px}
 .hint.ok{color:#34d399}
 .hint.err{color:#f87171}
-.divider{border:none;border-top:1px solid #334155;margin:18px 0}
-.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#64748b;margin-bottom:12px}
+.divider{border:none;border-top:1px solid #334155;margin:16px 0}
+.section-title{font-size:11px;text-transform:uppercase;letter-spacing:.8px;color:#94a3b8;margin-bottom:10px}
 .btn{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border:none;border-radius:10px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;margin-top:6px}
 .btn:hover{opacity:.9}
 .btn:disabled{opacity:.6;cursor:not-allowed}
 .link{text-align:center;margin-top:14px;font-size:13px;color:#64748b}
 .link a{color:#818cf8;text-decoration:none}
 .err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#f87171;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
-.terms-note{font-size:11px;color:#475569;text-align:center;margin-top:12px;line-height:1.6}
+.terms-note{font-size:11px;color:#94a3b8;text-align:center;margin-top:12px;line-height:1.6}
 .terms-note a{color:#818cf8;text-decoration:none}
-@media(max-width:480px){.row2{grid-template-columns:1fr}}
+@media(max-width:420px){
+  .row2{grid-template-columns:1fr}
+  .card{padding:22px 16px}
+}
 </style>
 </head>
 <body>
 <div class="card">
-  <div class="logo"><img src="logo.png" alt="Traami" style="height:48px;"></div>
+  <div class="logo-wrap"><a href="index.html"><img src="logo.png" alt="Traami"></a></div>
   <h2>Create your account</h2>
   <p class="sub">Join shift workers saving on their commute</p>
 
   <div id="err" class="err"></div>
 
-  <!-- Name row -->
   <div class="row2">
     <div class="field">
       <label>First Name</label>
@@ -58,17 +73,15 @@ select option{background:#1e293b}
     </div>
   </div>
 
-  <!-- Username -->
   <div class="field">
     <label>Username</label>
     <div class="username-wrap">
       <input id="username" placeholder="e.g. oscar_smith" autocomplete="username" oninput="checkUsername(this.value)">
       <span class="username-status" id="usernameIcon"></span>
     </div>
-    <p class="hint" id="usernameHint">3–20 characters, letters, numbers and underscores only</p>
+    <p class="hint" id="usernameHint">3–20 chars · letters, numbers and underscores only</p>
   </div>
 
-  <!-- Email + Password row -->
   <div class="row2">
     <div class="field">
       <label>Email</label>
@@ -80,24 +93,22 @@ select option{background:#1e293b}
     </div>
   </div>
 
-  <!-- Phone -->
   <div class="field">
-    <label>Phone Number <span style="color:#475569;font-weight:400">(optional — for login)</span></label>
+    <label>Phone <span style="color:#94a3b8;font-weight:400;text-transform:none;font-size:11px">(optional — for login)</span></label>
     <input id="phone" type="tel" placeholder="+44 7700 000000" autocomplete="tel">
-    <p class="hint">You can use your phone number to log in instead of your email</p>
   </div>
 
   <hr class="divider">
-  <div class="section-title">🏢 Workplace — helps us match you with coworkers</div>
+  <div class="section-title">🏢 Workplace — helps match you with coworkers</div>
 
   <div class="row2">
     <div class="field">
-      <label>Company / Employer</label>
-      <input id="company" placeholder="e.g. NHS, Amazon, Jaguar">
+      <label>Company</label>
+      <input id="company" placeholder="NHS, Amazon, Jaguar…">
     </div>
     <div class="field">
       <label>Work Location</label>
-      <input id="workLocation" placeholder="e.g. QE Hospital B'ham">
+      <input id="workLocation" placeholder="QE Hospital, B'ham">
     </div>
   </div>
 
@@ -111,7 +122,7 @@ select option{background:#1e293b}
   </div>
 
   <button class="btn" onclick="register()" id="btn">Create Account</button>
-  <p class="terms-note">By signing up you agree to our <a href="terms.html">Terms of Service</a> and <a href="privacy.html">Privacy Policy</a></p>
+  <p class="terms-note">By signing up you agree to our <a href="terms.html">Terms</a> and <a href="privacy.html">Privacy Policy</a></p>
   <div class="link">Already have an account? <a href="login.html">Sign in</a></div>
 </div>
 
@@ -125,86 +136,53 @@ function checkUsername(val) {
   const hint = document.getElementById("usernameHint")
   icon.style.display = "none"
   usernameAvailable = false
-
-  if (!val) { hint.textContent = "3–20 characters, letters, numbers and underscores only"; hint.className = "hint"; return }
-  if (!/^[a-z0-9_]{3,20}$/i.test(val)) {
-    hint.textContent = "Only letters, numbers and underscores allowed (3–20 chars)"
-    hint.className = "hint err"
-    return
-  }
-
-  hint.textContent = "Checking..."
-  hint.className = "hint"
-
+  if (!val) { hint.textContent = "3–20 chars · letters, numbers and underscores only"; hint.className = "hint"; return }
+  if (!/^[a-z0-9_]{3,20}$/i.test(val)) { hint.textContent = "Letters, numbers and underscores only (3–20 chars)"; hint.className = "hint err"; return }
+  hint.textContent = "Checking..."; hint.className = "hint"
   usernameTimer = setTimeout(async () => {
-    const res = await fetch("/api/auth/check-username?username=" + encodeURIComponent(val))
+    const res  = await fetch("/api/auth/check-username?username=" + encodeURIComponent(val))
     const data = await res.json()
     icon.style.display = "block"
     if (data.available) {
-      icon.textContent = "✅"
-      hint.textContent = "@" + val.toLowerCase() + " is available"
-      hint.className = "hint ok"
-      usernameAvailable = true
+      icon.textContent = "✅"; hint.textContent = "@" + val.toLowerCase() + " is available"; hint.className = "hint ok"; usernameAvailable = true
     } else {
-      icon.textContent = "❌"
-      hint.textContent = data.invalid ? "Invalid username format" : "Username already taken — try another"
-      hint.className = "hint err"
-      usernameAvailable = false
+      icon.textContent = "❌"; hint.textContent = data.invalid ? "Invalid format" : "Username taken — try another"; hint.className = "hint err"; usernameAvailable = false
     }
   }, 500)
 }
 
 async function register() {
   const firstName = document.getElementById("firstName").value.trim()
-  const lastName = document.getElementById("lastName").value.trim()
-  const username = document.getElementById("username").value.trim()
-  const email = document.getElementById("email").value.trim()
-  const password = document.getElementById("password").value
-  const phone = document.getElementById("phone").value.trim()
-  const err = document.getElementById("err")
-  const btn = document.getElementById("btn")
-
-  err.style.display = "none"
-
+  const lastName  = document.getElementById("lastName").value.trim()
+  const username  = document.getElementById("username").value.trim()
+  const email     = document.getElementById("email").value.trim()
+  const password  = document.getElementById("password").value
+  const phone     = document.getElementById("phone").value.trim()
+  const btn       = document.getElementById("btn")
+  document.getElementById("err").style.display = "none"
   if (!firstName || !lastName) { show("First and last name are required"); return }
-  if (!username) { show("Please choose a username"); return }
-  if (!usernameAvailable) { show("Please choose a valid, available username"); return }
-  if (!email) { show("Email is required"); return }
+  if (!username)               { show("Please choose a username"); return }
+  if (!usernameAvailable)      { show("Please choose a valid, available username"); return }
+  if (!email)                  { show("Email is required"); return }
   if (!password || password.length < 6) { show("Password must be at least 6 characters"); return }
-
-  btn.textContent = "Creating account..."
-  btn.disabled = true
-
+  btn.textContent = "Creating account..."; btn.disabled = true
   try {
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        firstName, lastName, username, email, phone, password,
+    const res  = await fetch("/api/auth/register", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ firstName, lastName, username, email, phone, password,
         company: document.getElementById("company").value,
         workLocation: document.getElementById("workLocation").value,
-        scheduleType: document.getElementById("scheduleType").value
-      })
+        scheduleType: document.getElementById("scheduleType").value })
     })
     const data = await res.json()
-    if (data.message === "Account created successfully") {
-      window.location.href = "register-success.html"
-    } else {
-      show(data.message || "Registration failed")
-      btn.textContent = "Create Account"
-      btn.disabled = false
-    }
-  } catch (e) {
-    show("Connection error. Please try again.")
-    btn.textContent = "Create Account"
-    btn.disabled = false
-  }
+    if (data.message === "Account created successfully") { window.location.href = "register-success.html" }
+    else { show(data.message || "Registration failed"); btn.textContent = "Create Account"; btn.disabled = false }
+  } catch(e) { show("Connection error. Please try again."); btn.textContent = "Create Account"; btn.disabled = false }
 }
 
 function show(msg) {
   const err = document.getElementById("err")
-  err.textContent = msg
-  err.style.display = "block"
+  err.textContent = msg; err.style.display = "block"
   err.scrollIntoView({ behavior: "smooth", block: "nearest" })
 }
 </script>

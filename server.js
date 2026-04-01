@@ -60,7 +60,7 @@ io.on("connection", (socket) => {
       const Message = require("./models/Message")
       const msg = new Message({ ride: rideId, sender: userId, text })
       await msg.save()
-      io.to("ride_" + rideId).emit("newMessage", { userId, text, time: new Date() })
+      io.to("ride_" + rideId).emit("newMessage", { rideId, userId, text, time: new Date() })
     } catch (err) {}
   })
   socket.on("disconnect", () => {})
