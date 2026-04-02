@@ -61,6 +61,7 @@
     <a href="#" onclick="showSection('earnings')">💰 Earnings</a>
     <a href="#" onclick="showSection('settings')">⚙️ Settings</a>
     <a href="#" onclick="showSection('withdrawals')">💸 Withdrawals</a>
+    <a href="#" onclick="showSection('payments')">💳 Payments</a>
     <hr style="border-color:#2d3148; margin:16px 0;">
     <a href="#" onclick="adminLogout()" style="color:#ef4444;">🚪 Logout</a>
   </div>
@@ -260,7 +261,7 @@ function showDashboard() {
 }
 
 function showSection(name) {
-  ["overviewSection","usersSection","ridesSection","earningsSection","settingsSection","withdrawalsSection"].forEach(id => {
+  ["overviewSection","usersSection","ridesSection","earningsSection","settingsSection","withdrawalsSection","paymentsSection"].forEach(id => {
     document.getElementById(id).style.display = "none"
   })
   document.getElementById(name + "Section").style.display = "block"
@@ -269,6 +270,7 @@ function showSection(name) {
   if (name === "earnings") loadEarnings()
   if (name === "settings") loadSettings()
   if (name === "withdrawals") loadWithdrawals()
+  if (name === "payments") loadPendingPayments()
 }
 
 async function loadOverview() {
@@ -412,6 +414,88 @@ async function deleteRide(id) {
 }
 
 
+
+
+async function loadPendingPayments() {
+  // Load revolut link
+  try {
+    const r = await fetch("/api/bookings/revolut-link", { headers: authHeaders() })
+    const d = await r.json()
+    if (d.link) document.getElementById("revolutLinkInput").value = d.link
+  } catch(e) {}
+
+  // Load pending payments
+  try {
+    const res  = await fetch("/api/bookings/pending-payments", { headers: authHeaders() })
+    const list = await res.json()
+    const el   = document.getElementById("pendingPaymentsList")
+
+    if (!list.length) {
+      el.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;font-size:14px">No pending payments 🎉 All clear!</div>'
+      return
+    }
+
+    el.innerHTML = list.map(p => `
+      <div style="background:#0f172a;border:1px solid #334155;border-radius:12px;padding:16px;margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:#e2e8f0">${p.passenger.firstName} ${p.passenger.lastName}</div>
+            <div style="font-size:13px;color:#64748b;margin-top:2px">@${p.passenger.username} · ${p.passenger.email}</div>
+            <div style="font-size:13px;color:#94a3b8;margin-top:6px">
+              🚗 ${p.ride ? p.ride.pickup + ' → ' + p.ride.destination : '—'}
+            </div>
+            <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:20px;font-weight:900;color:#34d399">£${p.amount}</span>
+              <span style="background:#1a3a2f;color:#34d399;border-radius:20px;padding:3px 10px;font-size:11px;font-weight:700">REF: ${p.ref}</span>
+            </div>
+            <div style="font-size:11px;color:#475569;margin-top:4px">Requested: ${new Date(p.createdAt).toLocaleString("en-GB")}</div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="confirmPaymentAdmin('${p.id}')"
+              style="background:#059669;color:white;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">
+              ✓ Confirm Payment
+            </button>
+            <button onclick="rejectPaymentAdmin('${p.id}')"
+              style="background:rgba(239,68,68,.15);color:#f87171;border:none;border-radius:8px;padding:10px 16px;font-size:13px;font-weight:700;cursor:pointer">
+              ✗ Reject
+            </button>
+          </div>
+        </div>
+      </div>`).join("")
+  } catch(e) {
+    document.getElementById("pendingPaymentsList").innerHTML = '<div style="color:#f87171;font-size:14px">Error loading payments</div>'
+  }
+}
+
+async function confirmPaymentAdmin(bookingId) {
+  if (!confirm("Confirm you have received this payment in your Revolut?")) return
+  const res  = await fetch("/api/bookings/approve/" + bookingId, { method: "PUT", headers: authHeaders() })
+  const data = await res.json()
+  alert(data.message)
+  loadPendingPayments()
+}
+
+async function rejectPaymentAdmin(bookingId) {
+  if (!confirm("Reject this booking? If the passenger paid, you will need to manually refund them via Revolut.")) return
+  const res  = await fetch("/api/bookings/reject/" + bookingId, { method: "PUT", headers: authHeaders() })
+  const data = await res.json()
+  alert(data.message)
+  loadPendingPayments()
+}
+
+async function saveRevolutLink() {
+  const link = document.getElementById("revolutLinkInput").value.trim()
+  if (!link) { alert("Please enter your Revolut link"); return }
+  const res  = await fetch("/api/bookings/revolut-link", {
+    method: "PUT", headers: authHeaders(),
+    body: JSON.stringify({ link })
+  })
+  const data = await res.json()
+  const msg  = document.getElementById("revolutLinkMsg")
+  msg.textContent = "✓ " + data.message
+  msg.style.display = "block"
+  setTimeout(() => msg.style.display = "none", 3000)
+}
 
 async function loadWithdrawals() {
   // Load earnings overview
@@ -561,9 +645,8 @@ window.onload = () => {
     showDashboard()
   }
 }
-
 </script>
-<script src="theme.js"></script>
 <script type="text/javascript">var Tawk_API=Tawk_API||{},Tawk_LoadStart=new Date();(function(){var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];s1.async=true;s1.src="https://embed.tawk.to/YOUR_TAWK_ID/default";s1.charset="UTF-8";s1.setAttribute("crossorigin","*");s0.parentNode.insertBefore(s1,s0);})();</script>
+<script src="theme.js"></script>
 </body>
 </html>

@@ -83,6 +83,33 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;
   .ride-actions{gap:6px}
   .btn-route,.btn-chat,.btn-rate,.btn-request{font-size:12px;padding:6px 10px}
 }
+
+/* Payment modal */
+.pay-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:910;display:none;align-items:center;justify-content:center;padding:16px}
+.pay-overlay.open{display:flex}
+.pay-box{background:#0f172a;border-radius:20px;width:100%;max-width:400px;border:1px solid #334155;overflow:hidden}
+.pay-header{background:linear-gradient(135deg,#4f46e5,#7c3aed);padding:20px 22px;display:flex;justify-content:space-between;align-items:center}
+.pay-header h3{color:#fff;font-size:16px;font-weight:700;margin:0}
+.btn-close-pay{background:none;border:none;color:rgba(255,255,255,.7);font-size:22px;cursor:pointer;padding:0}
+.pay-body{padding:22px}
+.pay-amount{text-align:center;margin-bottom:20px}
+.pay-amount .amount{font-size:42px;font-weight:900;color:#34d399}
+.pay-amount .ride-name{font-size:13px;color:#64748b;margin-top:4px}
+.pay-ref{background:#1e293b;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#94a3b8;line-height:1.8}
+.pay-ref strong{color:#e2e8f0}
+.pay-ref .ref-code{font-size:18px;font-weight:800;color:#818cf8;letter-spacing:2px}
+.pay-steps{margin-bottom:18px}
+.pay-step{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px;font-size:13px;color:#94a3b8;line-height:1.5}
+.pay-step-num{background:linear-gradient(135deg,#4f46e5,#7c3aed);color:#fff;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;margin-top:1px}
+.btn-pay-revolut{display:block;width:100%;background:linear-gradient(135deg,#0f172a,#1e293b);border:2px solid #4f46e5;color:#fff;border-radius:12px;padding:14px;font-size:15px;font-weight:700;cursor:pointer;text-align:center;text-decoration:none;margin-bottom:10px;transition:border-color .2s}
+.btn-pay-revolut:hover{border-color:#818cf8}
+.btn-paid{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none;border-radius:12px;padding:13px;width:100%;font-size:15px;font-weight:700;cursor:pointer;display:none}
+.pay-note{font-size:12px;color:#475569;text-align:center;margin-top:10px;line-height:1.6}
+.pay-success{text-align:center;padding:20px;display:none}
+.pay-success .icon{font-size:52px;margin-bottom:12px}
+.pay-success h4{font-size:18px;font-weight:800;margin-bottom:8px}
+.pay-success p{font-size:13px;color:#64748b;line-height:1.6}
+
 </style>
 </head>
 <body>
@@ -161,6 +188,55 @@ body{background:var(--dark);color:var(--text);font-family:'Segoe UI',sans-serif;
     <div style="display:flex;gap:8px;margin-top:16px">
       <button onclick="submitRating()" class="btn-request" style="flex:1">Submit Rating</button>
       <button onclick="closeRatingModal()" class="btn-chat" style="flex:1">Cancel</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Payment Modal -->
+<div class="pay-overlay" id="payOverlay" onclick="handlePayOverlayClick(event)">
+  <div class="pay-box" id="payBox">
+    <div class="pay-header">
+      <h3>💳 Complete Payment</h3>
+      <button class="btn-close-pay" onclick="closePayModal()">✕</button>
+    </div>
+    <div class="pay-body">
+
+      <!-- Step: show amount + revolut link -->
+      <div id="payStep1">
+        <div class="pay-amount">
+          <div class="amount" id="payAmount">£0.00</div>
+          <div class="ride-name" id="payRideName"></div>
+        </div>
+
+        <div class="pay-ref">
+          <strong>Your booking reference:</strong><br>
+          <span class="ref-code" id="payRef">——</span><br>
+          <span style="font-size:11px">Include this in your Revolut payment note</span>
+        </div>
+
+        <div class="pay-steps">
+          <div class="pay-step"><div class="pay-step-num">1</div><div>Tap <strong style="color:#e2e8f0">Pay via Revolut</strong> below — it opens Revolut with the amount pre-filled</div></div>
+          <div class="pay-step"><div class="pay-step-num">2</div><div>Complete payment in Revolut using <strong style="color:#e2e8f0">Apple Pay, Google Pay or card</strong></div></div>
+          <div class="pay-step"><div class="pay-step-num">3</div><div>Come back here and tap <strong style="color:#34d399">I've Paid</strong> so the driver can confirm</div></div>
+        </div>
+
+        <a id="payRevolutLink" href="#" target="_blank" class="btn-pay-revolut" onclick="onRevolutTapped()">
+          💸 Pay via Revolut
+        </a>
+        <button class="btn-paid" id="btnIvePaid" onclick="confirmPayment()">
+          ✅ I've Paid — Notify Driver
+        </button>
+        <p class="pay-note">Your seat is reserved for 30 minutes while you pay.<br>The driver will confirm once they see the payment in their Revolut.</p>
+      </div>
+
+      <!-- Success state -->
+      <div class="pay-success" id="paySuccess">
+        <div class="icon">🎉</div>
+        <h4>Payment Sent!</h4>
+        <p>The driver has been notified. You'll receive a confirmation notification once they verify the payment in their Revolut.<br><br>Check <a href="my-rides.html" style="color:#818cf8">My Rides</a> for updates.</p>
+      </div>
+
     </div>
   </div>
 </div>
@@ -265,7 +341,7 @@ function displayRides(rides) {
         </div>
         <div class="ride-actions">
           <button class="btn-route" onclick="drawRoute(${ride.pickupLat},${ride.pickupLng},${ride.destinationLat},${ride.destinationLng})">🗺 Route</button>
-          <button class="btn-request" onclick="requestSeat('${ride._id}')">Request Seat</button>
+          <button class="btn-request" onclick="requestSeat('${ride._id}','${ride.pickup} → ${ride.destination}','${ride.totalRidePrice ? ride.totalRidePrice.toFixed(2) : 0}')">Request Seat</button>
           <button class="btn-chat" id="chatbtn-${ride._id}" onclick="openChat('${ride._id}','${ride.pickup} → ${ride.destination}')" style="position:relative">
             💬 Chat${badgeHtml}
           </button>
@@ -283,10 +359,66 @@ function drawRoute(oLat, oLng, dLat, dLng) {
   }, (r, s) => { if (s === "OK") directionsRenderer.setDirections(r) })
 }
 
-async function requestSeat(rideId) {
-  const res  = await fetch(`/api/bookings/request/${rideId}`, { method: "POST", headers: { "Authorization": "Bearer " + token } })
+let currentBookingId = null
+
+async function requestSeat(rideId, rideName, priceStr) {
+  const res  = await fetch(`/api/bookings/request/${rideId}`, {
+    method: "POST", headers: { "Authorization": "Bearer " + token }
+  })
   const data = await res.json()
-  alert(data.message || data.error)
+  if (data.error) { alert(data.error); return }
+
+  // Open payment modal
+  currentBookingId = data.bookingId
+  document.getElementById("payAmount").textContent    = "£" + data.amountPounds
+  document.getElementById("payRideName").textContent  = rideName || ""
+  document.getElementById("payRef").textContent       = data.bookingRef
+  document.getElementById("payRevolutLink").href      = data.revolutLink
+  document.getElementById("payStep1").style.display   = "block"
+  document.getElementById("paySuccess").style.display = "none"
+  document.getElementById("btnIvePaid").style.display = "none"
+  document.getElementById("payOverlay").classList.add("open")
+  document.body.style.overflow = "hidden"
+}
+
+function onRevolutTapped() {
+  // Show "I've Paid" button after they tap the Revolut link
+  setTimeout(() => {
+    document.getElementById("btnIvePaid").style.display = "block"
+  }, 1500)
+}
+
+function closePayModal() {
+  document.getElementById("payOverlay").classList.remove("open")
+  document.body.style.overflow = ""
+}
+
+function handlePayOverlayClick(e) {
+  if (e.target === document.getElementById("payOverlay")) closePayModal()
+}
+
+async function confirmPayment() {
+  if (!currentBookingId) return
+  const btn = document.getElementById("btnIvePaid")
+  btn.textContent = "Notifying driver..."
+  btn.disabled = true
+  try {
+    const res  = await fetch(`/api/bookings/confirm-payment/${currentBookingId}`, {
+      method: "PUT", headers: { "Authorization": "Bearer " + token }
+    })
+    const data = await res.json()
+    if (res.ok) {
+      document.getElementById("payStep1").style.display   = "none"
+      document.getElementById("paySuccess").style.display = "block"
+    } else {
+      alert(data.message || data.error)
+      btn.textContent = "✅ I've Paid — Notify Driver"
+      btn.disabled = false
+    }
+  } catch(e) {
+    btn.textContent = "✅ I've Paid — Notify Driver"
+    btn.disabled = false
+  }
 }
 
 // ── Chat ───────────────────────────────────────────────────
@@ -448,8 +580,8 @@ if (token) {
   el.href = "dashboard.html"
 }
 </script>
-<script src="theme.js"></script>
 <!--StartofTawk.toScript--><script type="text/javascript"> var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date(); (function(){ var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0]; s1.async=true; s1.src='https://embed.tawk.to/69ccc9b3cfacab1c394463c5/default'; s1.charset='UTF-8'; s1.setAttribute('crossorigin','*'); s0.parentNode.insertBefore(s1,s0); })(); </script> <!--End of Tawk.to Script-->
 
+<script src="theme.js"></script>
 </body>
 </html>

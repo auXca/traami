@@ -1,33 +1,26 @@
 const mongoose = require("mongoose")
 
 const BookingSchema = new mongoose.Schema({
+  ride:      { type: mongoose.Schema.Types.ObjectId, ref: "Ride" },
+  passenger: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
-ride:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"Ride"
-},
+  status: {
+    type: String,
+    enum: ["pending_payment", "pending_approval", "approved", "rejected"],
+    default: "pending_payment"
+  },
 
-passenger:{
-type:mongoose.Schema.Types.ObjectId,
-ref:"User"
-},
+  // Payment
+  paymentStatus:   { type: String, enum: ["unpaid","awaiting_confirmation","paid","refunded"], default: "unpaid" },
+  paymentMethod:   { type: String, default: "revolut" },
+  amountPaid:      { type: Number },          // pence
+  revolut_ref:     { type: String },          // reference passenger used
 
-status:{
-type:String,
-enum:["pending","approved","rejected"],
-default:"pending"
-},
-
-dropoffNote:  { type: String },
+  // Ride details
+  dropoffNote:     { type: String },
   manualBooking:   { type: Boolean, default: false },
-  paymentStatus:   { type: String, enum: ["unpaid","paid","refunded"], default: "unpaid" },
-  paymentMethod:   { type: String },
 
-createdAt:{
-type:Date,
-default:Date.now
-}
-
+  createdAt: { type: Date, default: Date.now }
 })
 
-module.exports = mongoose.model("Booking",BookingSchema)
+module.exports = mongoose.model("Booking", BookingSchema)
